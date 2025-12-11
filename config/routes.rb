@@ -8,5 +8,5 @@ Rails.application.routes.draw do
   end
 
   # Health check endpoint
-  get "health", to: proc { [ 200, {}, [ "OK" ] ] }
+  get "health", to: "health#show"
 end

@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+echo "Setting up test database..."
+
+# Create test database if it doesn't exist
+bundle exec rails db:create RAILS_ENV=test 2>/dev/null || true
+
+# Run migrations
+bundle exec rails db:migrate RAILS_ENV=test
+
+echo "Test database ready!"

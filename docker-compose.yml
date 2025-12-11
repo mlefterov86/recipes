@@ -31,6 +31,9 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/recipes_development
+      DATABASE_HOST: db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
       RAILS_ENV: development
     stdin_open: true
     tty: true
@@ -50,6 +53,27 @@ services:
       NODE_ENV: development
     stdin_open: true
     tty: true
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bash -c "bundle exec rails db:create db:migrate RAILS_ENV=test && bundle exec rspec"
+    volumes:
+      - .:/app
+      - gem_cache:/usr/local/bundle
+      - node_modules:/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/recipes_test
+      DATABASE_HOST: db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      RAILS_ENV: test
+    profiles:
+      - test
 
 volumes:
   postgres_data:
