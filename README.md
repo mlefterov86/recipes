@@ -174,6 +174,58 @@ fetch('/api/v1/recipes')
   .then(data => console.log(data));
 ```
 
+## Code Quality & Linting
+
+### Running Linters Manually
+
+**Ruby (RuboCop):**
+```bash
+# Check for issues
+bundle exec rubocop
+
+# Auto-fix issues
+bundle exec rubocop -a
+```
+
+**JavaScript/TypeScript (ESLint):**
+```bash
+# Check for issues
+npm run lint
+
+# Auto-fix issues
+npm run lint:fix
+```
+
+### Pre-commit Hooks
+
+The project includes a pre-commit hook that automatically runs RuboCop and ESLint on staged files before each commit.
+
+**Install the pre-commit hook:**
+```bash
+bin/setup-hooks
+```
+
+This will:
+- Run RuboCop on staged Ruby files
+- Run ESLint on staged JavaScript/TypeScript files
+- Prevent commits if linting fails
+- Show helpful tips for fixing issues
+
+**Bypass the hook (not recommended):**
+```bash
+git commit --no-verify
+```
+
+### GitHub Actions CI
+
+All pull requests and pushes to `main` automatically run:
+- RuboCop for Ruby code style
+- ESLint for JavaScript/TypeScript code style
+- Brakeman for Rails security vulnerabilities
+- Bundler Audit for gem security vulnerabilities
+
+See `.github/workflows/ci.yml` for details.
+
 ## Docker Commands
 
 **Rebuild containers after dependency changes:**
