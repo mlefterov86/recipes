@@ -7,11 +7,18 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "localhost:3036", "127.0.0.1:3036", "0.0.0.0:3036"
-
-    resource "*",
-      headers: :any,
-      methods: [ :get, :post, :put, :patch, :delete, :options, :head ],
-      credentials: true
+    if Rails.env.test?
+      origins "*"
+      resource "*",
+        headers: :any,
+        methods: [ :get, :post, :put, :patch, :delete, :options, :head ],
+        credentials: false
+    else
+      origins "localhost:3036", "127.0.0.1:3036", "0.0.0.0:3036"
+      resource "*",
+        headers: :any,
+        methods: [ :get, :post, :put, :patch, :delete, :options, :head ],
+        credentials: true
+    end
   end
 end

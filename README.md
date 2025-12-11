@@ -174,6 +174,94 @@ fetch('/api/v1/recipes')
   .then(data => console.log(data));
 ```
 
+## Testing
+
+This project uses RSpec for testing with FactoryBot for test data, Shoulda Matchers for additional matchers, and Database Cleaner for database management.
+
+### Running Tests
+
+**Run all tests:**
+```bash
+bundle exec rspec
+```
+
+**Run a specific test file:**
+```bash
+bundle exec rspec spec/requests/health_spec.rb
+```
+
+**Run tests matching a pattern:**
+```bash
+bundle exec rspec spec/models
+```
+
+**Run tests with documentation format:**
+```bash
+bundle exec rspec --format documentation
+```
+
+### Running Tests in Docker
+
+**Using the test service (Recommended):**
+```bash
+# Runs tests with automatic database setup
+docker-compose run --rm test
+```
+
+The test service automatically:
+- Runs in RAILS_ENV=test
+- Creates the test database if it doesn't exist
+- Runs migrations
+- Executes the test suite
+
+**Note:** Always use the `test` service for running tests. The `web` service runs in development mode and is not configured for testing.
+
+### Writing Tests
+
+**Request Specs (API endpoints):**
+```ruby
+# spec/requests/api/v1/recipes_spec.rb
+require 'rails_helper'
+
+RSpec.describe "Api::V1::Recipes", type: :request do
+  describe "GET /api/v1/recipes" do
+    it "returns a successful response" do
+      get '/api/v1/recipes'
+      expect(response).to have_http_status(:success)
+    end
+  end
+end
+```
+
+**Model Specs:**
+```ruby
+# spec/models/recipe_spec.rb
+require 'rails_helper'
+
+RSpec.describe Recipe, type: :model do
+  it { should validate_presence_of(:name) }
+  it { should validate_presence_of(:description) }
+end
+```
+
+**Using Factories:**
+```ruby
+# spec/factories/recipes.rb
+FactoryBot.define do
+  factory :recipe do
+    name { Faker::Food.dish }
+    description { Faker::Food.description }
+  end
+end
+
+# In your specs:
+let(:recipe) { create(:recipe) }
+```
+
+### Test Coverage
+
+The CI pipeline automatically runs tests on every pull request and push to `main`. See the `test` job in `.github/workflows/ci.yml`.
+
 ## Code Quality & Linting
 
 ### Running Linters Manually
@@ -218,13 +306,34 @@ git commit --no-verify
 
 ### GitHub Actions CI
 
-All pull requests and pushes to `main` automatically run:
-- RuboCop for Ruby code style
-- ESLint for JavaScript/TypeScript code style
-- Brakeman for Rails security vulnerabilities
-- Bundler Audit for gem security vulnerabilities
+All pull requests and pushes to `main`, `develop`, or `master` automatically run:
+- **RSpec** - Full test suite
+- **RuboCop** - Ruby code style
+- **ESLint** - JavaScript/TypeScript code style
+- **Brakeman** - Rails security vulnerabilities
+- **Bundler Audit** - Gem security vulnerabilities
 
 See `.github/workflows/ci.yml` for details.
+
+### Branch Protection Rules
+
+To enforce CI checks before merging on GitHub:
+
+1. Go to your repository on GitHub
+2. Navigate to **Settings** → **Branches**
+3. Click **Add branch protection rule**
+4. For **Branch name pattern**, enter: `develop` (or `main`)
+5. Enable these settings:
+   - ✅ **Require status checks to pass before merging**
+   - ✅ **Require branches to be up to date before merging**
+   - Select required status checks:
+     - `test`
+     - `lint_ruby`
+     - `lint_js`
+     - `scan_ruby`
+6. Click **Create** or **Save changes**
+
+This will prevent merging until all CI checks pass.
 
 ## Docker Commands
 
