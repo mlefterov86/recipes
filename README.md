@@ -312,8 +312,21 @@ All pull requests and pushes to `main`, `develop`, or `master` automatically run
 - **ESLint** - JavaScript/TypeScript code style
 - **Brakeman** - Rails security vulnerabilities
 - **Bundler Audit** - Gem security vulnerabilities
+- **npm audit** - JavaScript dependency vulnerabilities (fails on high/critical only)
 
 See `.github/workflows/ci.yml` for details.
+
+**Check for vulnerabilities locally:**
+```bash
+# Ruby gems
+bundle exec bundler-audit
+
+# JavaScript packages
+npm audit
+
+# Fix JavaScript vulnerabilities
+npm audit fix
+```
 
 ### Branch Protection Rules
 
