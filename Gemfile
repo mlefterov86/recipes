@@ -39,6 +39,9 @@ gem "bootsnap", require: false
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS)
 gem "rack-cors"
 
+# Catch unsafe migrations to prevent downtime
+gem "strong_migrations"
+
 # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
 gem "kamal", require: false
 
@@ -77,6 +80,9 @@ group :test do
 
   # Database Cleaner for cleaning test database [https://github.com/DatabaseCleaner/database_cleaner]
   gem "database_cleaner-active_record"
+
+  # WebMock for stubbing HTTP requests [https://github.com/bblimke/webmock]
+  gem "webmock"
 end
 
 group :development do
