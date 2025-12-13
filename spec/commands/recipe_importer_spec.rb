@@ -14,7 +14,7 @@ RSpec.describe RecipeImporter, type: :command do
         "cuisine" => "Italian",
         "category" => "Pasta",
         "author" => "Chef Mario",
-        "image" => "https://example.com/carbonara.jpg"
+        "image" => "https://imagesvc.meredithcorp.io/v3/mm/image?url=https%3A%2F%2Fstatic.onecms.io%2Fwp-content%2Fuploads%2Fsites%2F43%2F2021%2F10%2F26%2Fcarbonara.jpg"
       },
       {
         "title" => "Margherita Pizza",
@@ -25,7 +25,7 @@ RSpec.describe RecipeImporter, type: :command do
         "cuisine" => "Italian",
         "category" => "Pizza",
         "author" => "Chef Luigi",
-        "image" => "https://example.com/pizza.jpg"
+        "image" => "https://imagesvc.meredithcorp.io/v3/mm/image?url=https%3A%2F%2Fimages.media-allrecipes.com%2Fuserphotos%2F50654.jpg"
       }
     ]
   end
@@ -525,6 +525,92 @@ RSpec.describe RecipeImporter, type: :command do
         command
 
         expect(Author.count).to eq(10)
+      end
+    end
+
+    context 'with image URL extraction' do
+      let(:test_data) do
+        [
+          {
+            "title" => "Test Recipe",
+            "cook_time" => "30",
+            "prep_time" => "15",
+            "ingredients" => [ "flour" ],
+            "category" => "Desserts",
+            "author" => "Test Chef",
+            "image" => image_url
+          }
+        ]
+      end
+
+      before do
+        stub_services(test_data)
+      end
+
+      context 'when image URL is a proxy URL' do
+        let(:image_url) do
+          "https://imagesvc.meredithcorp.io/v3/mm/image?url=https%3A%2F%2Fstatic.onecms.io%2Fwp-content%2Fuploads%2Fsites%2F43%2F2021%2F10%2F26%2Fcornbread-1.jpg"
+        end
+
+        it 'extracts the actual image URL from the proxy URL' do
+          command
+
+          expect(Recipe.first.image_url).to eq("https://static.onecms.io/wp-content/uploads/sites/43/2021/10/26/cornbread-1.jpg")
+        end
+      end
+
+      context 'when image URL is a direct URL' do
+        let(:image_url) { "https://example.com/direct-image.jpg" }
+
+        it 'uses the direct URL as-is' do
+          command
+
+          expect(Recipe.first.image_url).to eq("https://example.com/direct-image.jpg")
+        end
+      end
+
+      context 'when image URL is nil' do
+        let(:image_url) { nil }
+
+        it 'handles nil image URL' do
+          command
+
+          expect(Recipe.count).to eq(1)
+          expect(Recipe.first.image_url).to be_nil
+        end
+      end
+
+      context 'when image URL is blank' do
+        let(:image_url) { "" }
+
+        it 'handles blank image URL' do
+          command
+
+          expect(Recipe.count).to eq(1)
+          expect(Recipe.first.image_url).to be_nil
+        end
+      end
+
+      context 'when image URL is malformed' do
+        let(:image_url) { "not a valid url at all" }
+
+        it 'uses the original URL when parsing fails' do
+          command
+
+          expect(Recipe.count).to eq(1)
+          expect(Recipe.first.image_url).to eq("not a valid url at all")
+        end
+      end
+
+      context 'when proxy URL has no url parameter' do
+        let(:image_url) { "https://imagesvc.meredithcorp.io/v3/mm/image?width=300&height=200" }
+
+        it 'uses the original URL when url parameter is missing' do
+          command
+
+          expect(Recipe.count).to eq(1)
+          expect(Recipe.first.image_url).to eq("https://imagesvc.meredithcorp.io/v3/mm/image?width=300&height=200")
+        end
       end
     end
   end
