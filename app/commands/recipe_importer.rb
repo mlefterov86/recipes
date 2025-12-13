@@ -96,7 +96,7 @@ class RecipeImporter
       cuisine: recipe_data["cuisine"],
       category: category,
       author: author,
-      image_url: recipe_data["image"]
+      image_url: extract_actual_image_url(recipe_data["image"])
     )
 
     stats[:recipes] += 1
@@ -131,6 +131,18 @@ class RecipeImporter
 
     rating = rating_value.to_f
     rating.between?(0, 5) ? rating.round(2) : nil
+  end
+
+  def extract_actual_image_url(image_url)
+    return nil if image_url.blank?
+
+    # Parse the proxy URL and extract the actual image URL from the 'url' query parameter
+    uri = URI.parse(image_url)
+    query_params = URI.decode_www_form(uri.query || "").to_h
+    query_params["url"] || image_url
+  rescue URI::InvalidURIError, StandardError
+    # If parsing fails, return the original URL
+    image_url
   end
 
   def print_progress(current, total)
