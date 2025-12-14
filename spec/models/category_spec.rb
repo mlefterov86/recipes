@@ -10,7 +10,17 @@ RSpec.describe Category, type: :model do
     subject { build(:category) }
 
     it { is_expected.to validate_presence_of(:name) }
-    it { is_expected.to validate_uniqueness_of(:name).case_insensitive }
+    it { is_expected.to validate_uniqueness_of(:name) }
+
+    context 'with name normalization' do
+      it 'enforces uniqueness regardless of case due to normalization' do
+        create(:category, name: 'pasta')
+        duplicate = build(:category, name: 'PASTA')
+
+        expect(duplicate).not_to be_valid
+        expect(duplicate.errors[:name]).to include('has already been taken')
+      end
+    end
   end
 
   describe 'database columns' do

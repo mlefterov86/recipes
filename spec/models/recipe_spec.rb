@@ -237,6 +237,22 @@ RSpec.describe Recipe, type: :model do
       recipe = create(:recipe, cuisine: nil, category: category, author: author)
       expect(recipe.searchable).to be_present
     end
+
+    it 'handles special characters in recipe data' do
+      special_category = create(:category, name: "Pizza & Pasta")
+      special_recipe = create(:recipe,
+        title: "Lamb Grinder: ¼ cup kosher salt",
+        ingredients: [ "¼ cup salt", "½ cup pepper", "Chef's special sauce" ],
+        cuisine: "Chef's Italian",
+        category: special_category,
+        author: author
+      )
+
+      expect(special_recipe.searchable).to be_present
+      expect(special_recipe.searchable).to include('Lamb')
+      expect(special_recipe.searchable).to include('Grinder')
+      expect(special_recipe.searchable).to include('salt')
+    end
   end
 
   describe 'parent counter updates' do
