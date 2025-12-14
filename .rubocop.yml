@@ -13,3 +13,7 @@ AllCops:
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
 # Layout/SpaceInsideArrayLiteralBrackets:
 #   Enabled: false
+
+# Enable removal of multiple consecutive empty lines
+Layout/EmptyLines:
+  Enabled: true

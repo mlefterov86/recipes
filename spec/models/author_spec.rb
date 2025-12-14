@@ -25,6 +25,43 @@ RSpec.describe Author, type: :model do
     it { is_expected.to have_db_index(:name).unique }
   end
 
+  describe 'scopes' do
+    describe '.by_category' do
+      let(:category1) { create(:category, name: 'Italian') }
+      let(:category2) { create(:category, name: 'Desserts') }
+      let(:category3) { create(:category, name: 'Asian') }
+      let(:author1) { create(:author, name: 'Chef John') }
+      let(:author2) { create(:author, name: 'Gordon Ramsay') }
+
+      before do
+        create(:recipe, author: author1, category: category1)
+        create(:recipe, author: author2, category: category1)
+        create(:recipe, author: author1, category: category2)
+      end
+
+      it 'returns only authors that have recipes in the specified category' do
+        results = Author.by_category(category1.id)
+        expect(results).to contain_exactly(author1, author2)
+      end
+
+      it 'returns all authors when category_id is nil' do
+        results = Author.by_category(nil)
+        expect(results).to contain_exactly(author1, author2)
+      end
+
+      it 'returns all authors when category_id is blank' do
+        results = Author.by_category('')
+        expect(results).to contain_exactly(author1, author2)
+      end
+
+      it 'returns distinct authors when same author has multiple recipes in same category' do
+        create(:recipe, author: author1, category: category1)
+        results = Author.by_category(category1.id)
+        expect(results.count).to eq(2)
+      end
+    end
+  end
+
   describe '#refresh_categories_count!' do
     let(:author) { create(:author) }
     let(:category1) { create(:category, name: 'Pizza') }

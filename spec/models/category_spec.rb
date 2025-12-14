@@ -9,6 +9,8 @@ RSpec.describe Category, type: :model do
   describe 'validations' do
     it { is_expected.to validate_presence_of(:name) }
 
+    # Note: validate_uniqueness_of matcher doesn't work with before_validation normalization
+    # Testing uniqueness through explicit test below instead
     context 'with name normalization' do
       it 'enforces uniqueness regardless of case due to normalization' do
         create(:category, name: 'pasta')
@@ -30,6 +32,43 @@ RSpec.describe Category, type: :model do
 
   describe 'indexes' do
     it { is_expected.to have_db_index(:name).unique }
+  end
+
+  describe 'scopes' do
+    describe '.by_author' do
+      let(:author1) { create(:author, name: 'Chef John') }
+      let(:author2) { create(:author, name: 'Gordon Ramsay') }
+      let(:category1) { create(:category, name: 'Italian') }
+      let(:category2) { create(:category, name: 'Desserts') }
+      let(:category3) { create(:category, name: 'Asian') }
+
+      before do
+        create(:recipe, category: category1, author: author1)
+        create(:recipe, category: category2, author: author1)
+        create(:recipe, category: category3, author: author2)
+      end
+
+      it 'returns only categories that have recipes by the specified author' do
+        results = Category.by_author(author1.id)
+        expect(results).to contain_exactly(category1, category2)
+      end
+
+      it 'returns all categories when author_id is nil' do
+        results = Category.by_author(nil)
+        expect(results).to contain_exactly(category1, category2, category3)
+      end
+
+      it 'returns all categories when author_id is blank' do
+        results = Category.by_author('')
+        expect(results).to contain_exactly(category1, category2, category3)
+      end
+
+      it 'returns distinct categories when author has multiple recipes in same category' do
+        create(:recipe, category: category1, author: author1)
+        results = Category.by_author(author1.id)
+        expect(results.count).to eq(2)
+      end
+    end
   end
 
   describe '#refresh_authors_count!' do
