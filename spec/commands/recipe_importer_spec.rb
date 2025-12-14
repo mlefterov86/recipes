@@ -357,6 +357,64 @@ RSpec.describe RecipeImporter, type: :command do
       end
     end
 
+    context 'with case-variant duplicate categories and authors' do
+      let(:case_variant_data) do
+        [
+          {
+            "title" => "Recipe 1",
+            "ingredients" => [ "flour" ],
+            "category" => "Pizza Dough and Crusts",
+            "author" => "Chef Mario"
+          },
+          {
+            "title" => "Recipe 2",
+            "ingredients" => [ "sugar" ],
+            "category" => "Pizza dough and crusts",
+            "author" => "chef mario"
+          },
+          {
+            "title" => "Recipe 3",
+            "ingredients" => [ "eggs" ],
+            "category" => "PIZZA DOUGH AND CRUSTS",
+            "author" => "CHEF MARIO"
+          }
+        ]
+      end
+
+      before do
+        allow(FileDownloader).to receive(:call).and_return(
+          instance_double(FileDownloader, success?: true, failure?: false, result: described_class::GZ_FILE_PATH)
+        )
+        allow(GzipExtractor).to receive(:call).and_return(
+          instance_double(GzipExtractor, success?: true, failure?: false, result: case_variant_data.to_json)
+        )
+      end
+
+      it 'normalizes and reuses category despite different cases' do
+        result = command
+
+        expect(Category.count).to eq(1)
+        expect(result.stats[:categories]).to eq(1)
+        expect(Category.first.name).to eq("Pizza Dough And Crusts")
+      end
+
+      it 'normalizes and reuses author despite different cases' do
+        result = command
+
+        expect(Author.count).to eq(1)
+        expect(result.stats[:authors]).to eq(1)
+        expect(Author.first.name).to eq("Chef Mario")
+      end
+
+      it 'imports all recipes successfully' do
+        result = command
+
+        expect(Recipe.count).to eq(3)
+        expect(result.stats[:recipes]).to eq(3)
+        expect(result.stats[:errors]).to be_empty
+      end
+    end
+
     context 'when individual recipe import fails' do
       before do
         mixed_data = [

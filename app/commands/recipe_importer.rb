@@ -105,7 +105,10 @@ class RecipeImporter
   def find_or_create_category(category_name)
     return nil if category_name.blank?
 
-    category = Category.find_or_initialize_by(name: category_name)
+    # Normalize the name before searching to match the model's normalization
+    normalized_name = category_name.strip.titleize
+
+    category = Category.find_or_initialize_by(name: normalized_name)
     stats[:categories] += 1 if category.new_record?
     category.save! if category.new_record?
     category
@@ -114,7 +117,11 @@ class RecipeImporter
   def find_or_create_author(author_name)
     return nil if author_name.blank?
 
-    author = Author.find_or_initialize_by(name: author_name)
+    # Normalize the name before searching to match the model's normalization
+    normalized_name = author_name.strip
+
+    # Use case-insensitive search to match Author's case_sensitive: false validation
+    author = Author.where("LOWER(name) = ?", normalized_name.downcase).first_or_initialize(name: normalized_name)
     stats[:authors] += 1 if author.new_record?
     author.save! if author.new_record?
     author

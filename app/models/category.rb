@@ -2,9 +2,9 @@ class Category < ApplicationRecord
   has_many :recipes, dependent: :nullify
   has_many :authors, -> { distinct }, through: :recipes
 
-  validates :name, presence: true, uniqueness: { case_sensitive: false }
+  validates :name, presence: true, uniqueness: true
 
-  before_save :normalize_name
+  before_validation :normalize_name
 
   # Refresh the authors_count cache (call after bulk operations)
   def refresh_authors_count!
@@ -14,6 +14,6 @@ class Category < ApplicationRecord
   private
 
   def normalize_name
-    self.name = name.strip.titleize
+    self.name = name.strip.titleize if name.present?
   end
 end

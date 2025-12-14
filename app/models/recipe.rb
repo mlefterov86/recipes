@@ -24,8 +24,12 @@ class Recipe < ApplicationRecord
       cuisine
     ].compact.join(" ")
 
-    # Convert to tsvector using PostgreSQL's to_tsvector function
-    self.searchable = searchable_text
+    # Clean the text to remove problematic characters for tsvector
+    # Replace special chars that break tsvector parsing with spaces
+    cleaned_text = searchable_text.gsub(/[^\w\s-]/, " ").squeeze(" ").strip
+
+    # Let PostgreSQL automatically convert to tsvector
+    self.searchable = cleaned_text
   end
 
   # Update distinct counter caches when recipe is created or category/author changes

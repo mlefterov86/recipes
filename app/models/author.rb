@@ -4,7 +4,7 @@ class Author < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
 
-  before_save :normalize_name
+  before_validation :normalize_name
 
   # Refresh the categories_count cache (call after bulk operations)
   def refresh_categories_count!
@@ -14,6 +14,6 @@ class Author < ApplicationRecord
   private
 
   def normalize_name
-    self.name = name.strip
+    self.name = name.strip if name.present?
   end
 end
