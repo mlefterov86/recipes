@@ -9,6 +9,22 @@ A full-stack web application built with Rails API backend and React frontend (po
 - **Database**: PostgreSQL 16
 - **Styling**: Tailwind CSS
 
+## Features
+
+### Database Models
+- **Recipe**: Stores recipes with title, ingredients (JSONB), cook/prep times, ratings, cuisine, and full-text search capability
+- **Category**: Recipe categories with normalized names and counter caches
+- **Author**: Recipe authors with case-insensitive uniqueness
+- **Full-text search**: PostgreSQL tsvector for searching recipes by title, ingredients, category, author, and cuisine
+
+### Data Import
+- **RecipeImporter**: Bulk import recipes from external JSON sources
+  - Downloads and extracts gzipped JSON files
+  - Automatically normalizes category/author names
+  - Extracts actual image URLs from proxy URLs
+  - Handles duplicates and special characters
+  - Provides progress tracking and error reporting
+
 ## Prerequisites
 
 ### For Docker Setup (Recommended)
@@ -26,19 +42,37 @@ A full-stack web application built with Rails API backend and React frontend (po
 ```
 .
 ├── app/
+│   ├── commands/          # Service objects for complex operations
+│   │   ├── recipe_importer.rb
+│   │   └── service_object.rb
 │   ├── controllers/       # Rails API controllers
-│   ├── models/           # ActiveRecord models
-│   └── javascript/       # React frontend application
-│       ├── components/   # React components
-│       ├── entrypoints/  # Vite entry points
+│   │   └── health_controller.rb
+│   ├── models/            # ActiveRecord models
+│   │   ├── recipe.rb      # Recipe model with full-text search
+│   │   ├── category.rb    # Category with normalized names
+│   │   └── author.rb      # Author with case-insensitive uniqueness
+│   ├── services/          # Utility services
+│   │   ├── file_downloader.rb
+│   │   └── gzip_extractor.rb
+│   └── javascript/        # React frontend application
+│       ├── components/    # React components
+│       ├── entrypoints/   # Vite entry points
 │       ├── application.tsx
-│       ├── router.tsx    # React Router configuration
-│       └── index.html    # Main HTML entry point
+│       ├── router.tsx     # React Router configuration
+│       └── index.html     # Main HTML entry point
 ├── config/
-│   ├── routes.rb        # API routes (namespaced under /api/v1)
+│   ├── routes.rb         # API routes (namespaced under /api/v1)
 │   └── initializers/
-│       └── cors.rb      # CORS configuration
-└── docker-compose.yml   # Docker services configuration
+│       └── cors.rb       # CORS configuration
+├── db/
+│   ├── migrate/          # Database migrations
+│   └── seeds.rb          # Database seeds (uses RecipeImporter)
+├── spec/                 # RSpec test suite
+│   ├── commands/         # Service object tests
+│   ├── models/           # Model tests
+│   ├── requests/         # API endpoint tests
+│   └── services/         # Service tests
+└── docker-compose.yml    # Docker services configuration
 ```
 
 ## Getting Started
@@ -63,8 +97,10 @@ A full-stack web application built with Rails API backend and React frontend (po
 
 4. **Setup the database**
    ```bash
-   docker-compose exec web rails db:create db:migrate
+   docker-compose exec web rails db:create db:migrate db:seed
    ```
+
+   This will create the database, run migrations, and import recipe data (may take a few minutes).
 
 5. **View logs** (optional)
    ```bash
@@ -103,8 +139,10 @@ A full-stack web application built with Rails API backend and React frontend (po
 
    Ensure PostgreSQL is running, then:
    ```bash
-   rails db:create db:migrate
+   rails db:create db:migrate db:seed
    ```
+
+   This will create the database, run migrations, and import recipe data (may take a few minutes).
 
 5. **Start development servers**
 
@@ -136,6 +174,78 @@ A full-stack web application built with Rails API backend and React frontend (po
    - Health check: http://localhost:3000/health
 
 ## Development
+
+### Database Models
+
+**Recipe Model** (`app/models/recipe.rb`):
+- Attributes: title, ingredients (JSONB array), cook_time, prep_time, ratings (0-5), cuisine, image_url
+- Associations: belongs_to category (optional), belongs_to author (optional)
+- Features:
+  - Full-text search using PostgreSQL tsvector
+  - Automatic counter cache updates for categories and authors
+  - Special character handling in searchable field
+
+**Category Model** (`app/models/category.rb`):
+- Attributes: name (unique, titleized)
+- Counter caches: recipes_count, authors_count
+- Normalization: Automatically titleizes names (e.g., "pizza dough" → "Pizza Dough")
+
+**Author Model** (`app/models/author.rb`):
+- Attributes: name (unique, case-insensitive)
+- Counter caches: recipes_count, categories_count
+- Normalization: Strips whitespace, case-insensitive uniqueness
+
+### Importing Recipe Data
+
+Use the Rails console to import recipes:
+
+```ruby
+# Via Docker
+docker-compose exec web rails console
+
+# Then run:
+RecipeImporter.call
+
+# Check results:
+Recipe.count
+Category.count
+Author.count
+```
+
+The importer will:
+- Download and extract recipe data from S3
+- Create categories and authors with normalized names
+- Extract actual image URLs from proxy URLs
+- Handle duplicates and special characters
+- Report progress and errors
+
+### Connecting to the Database
+
+**Via Rails Console:**
+```bash
+docker-compose exec web rails console
+
+# Query recipes
+Recipe.first
+Recipe.where(cuisine: "Italian").count
+```
+
+**Via psql:**
+```bash
+docker-compose exec db psql -U postgres -d recipes_development
+
+# SQL queries
+SELECT COUNT(*) FROM recipes;
+SELECT DISTINCT cuisine FROM recipes;
+\q
+```
+
+**Via Database GUI:**
+- Host: localhost
+- Port: 5432
+- Database: recipes_development
+- Username: postgres
+- Password: postgres
 
 ### API Development
 
@@ -260,7 +370,15 @@ let(:recipe) { create(:recipe) }
 
 ### Test Coverage
 
-The CI pipeline automatically runs tests on every pull request and push to `main`. See the `test` job in `.github/workflows/ci.yml`.
+Current test suite: **169 tests passing**
+- Model specs: Recipe, Category, Author validations and associations
+- Service specs: RecipeImporter, FileDownloader, GzipExtractor
+- Request specs: Health endpoint
+- Full coverage for:
+  - Name normalization and case-insensitive duplicate handling
+  - Full-text searchable field updates
+  - Image URL extraction from proxy URLs
+  - Counter cache updates
 
 ## Code Quality & Linting
 
@@ -294,10 +412,12 @@ bin/setup-hooks
 ```
 
 This will:
-- Run RuboCop on staged Ruby files
+- Run RuboCop on staged Ruby files (excluding db/schema.rb)
 - Run ESLint on staged JavaScript/TypeScript files
 - Prevent commits if linting fails
 - Show helpful tips for fixing issues
+
+**Note:** `db/schema.rb` is automatically excluded from RuboCop checks to prevent auto-formatting of the auto-generated schema file.
 
 **Bypass the hook (not recommended):**
 ```bash
