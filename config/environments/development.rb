@@ -6,6 +6,12 @@ Rails.application.configure do
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 
+  # Allow requests from Docker and localhost hosts
+  config.hosts << "0.0.0.0"
+  config.hosts << "localhost"
+  config.hosts << "127.0.0.1"
+  config.hosts << "web"
+
   # Do not eager load code on boot.
   config.eager_load = false
 
