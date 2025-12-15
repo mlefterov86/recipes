@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 
 interface Option {
-  id: number
+  id: string
   name: string
 }
 
 interface SearchableSelectProps {
-  value: number | undefined
+  value: string | undefined
   options: Option[]
-  onChange: (value: number | undefined) => void
+  onChange: (value: string | undefined) => void
   placeholder?: string
   disabled?: boolean
   loading?: boolean
@@ -62,7 +62,7 @@ function SearchableSelect({ value, options, onChange, placeholder = 'Select...',
     }
   }, [highlightedIndex])
 
-  const handleSelect = (optionId: number) => {
+  const handleSelect = (optionId: string) => {
     onChange(optionId)
     setIsOpen(false)
     setSearchTerm('')

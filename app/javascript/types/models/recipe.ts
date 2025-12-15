@@ -2,7 +2,7 @@ import type { Category } from './category';
 import type { Author } from './author';
 
 export interface Recipe {
-  id: number;
+  id: string;
   title: string;
   image_url: string | null;
   ratings: number | null;

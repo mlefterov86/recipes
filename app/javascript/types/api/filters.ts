@@ -12,8 +12,8 @@ export type SortOption =
 
 export interface FilterParams {
   page: number;
-  category_id?: number;
-  author_id?: number;
+  category_id?: string;
+  author_id?: string;
   title?: string;
   ingredient?: string;
   query?: string;
