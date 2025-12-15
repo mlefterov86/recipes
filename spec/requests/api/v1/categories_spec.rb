@@ -21,8 +21,8 @@ RSpec.describe 'Api::V1::Categories', type: :request do
 
       category_json = json[:data].first
 
-      expect(category_json).to include(:id, :name)
-      expect(category_json.keys).to contain_exactly(:id, :name)
+      expect(category_json).to include(:id, :name, :recipes_count)
+      expect(category_json.keys).to contain_exactly(:id, :name, :recipes_count)
     end
 
     context 'when no categories exist' do

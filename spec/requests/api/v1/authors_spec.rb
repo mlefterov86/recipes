@@ -21,8 +21,8 @@ RSpec.describe 'Api::V1::Authors', type: :request do
 
       author_json = json[:data].first
 
-      expect(author_json).to include(:id, :name)
-      expect(author_json.keys).to contain_exactly(:id, :name)
+      expect(author_json).to include(:id, :name, :recipes_count)
+      expect(author_json.keys).to contain_exactly(:id, :name, :recipes_count)
     end
 
     context 'when no authors exist' do
