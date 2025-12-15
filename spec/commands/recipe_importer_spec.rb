@@ -116,6 +116,14 @@ RSpec.describe RecipeImporter, type: :command do
 
     context 'when JSON file already exists' do
       before do
+        # Reset the stubs to not return anything, just track calls
+        # The file exists so these services should not be called
+        RSpec::Mocks.space.proxy_for(FileDownloader).reset
+        RSpec::Mocks.space.proxy_for(GzipExtractor).reset
+
+        allow(FileDownloader).to receive(:call)
+        allow(GzipExtractor).to receive(:call)
+
         FileUtils.mkdir_p(File.dirname(described_class::JSON_FILE_PATH))
         File.write(described_class::JSON_FILE_PATH, json_content)
       end

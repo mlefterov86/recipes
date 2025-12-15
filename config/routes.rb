@@ -2,8 +2,9 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
-      # Add your API endpoints here
-      # Example: resources :recipes
+      resources :recipes, only: [ :index, :show ]
+      resources :categories, only: [ :index ]
+      resources :authors, only: [ :index ]
     end
   end
 
