@@ -69,7 +69,7 @@ dcrspec spec/models/recipe_spec.rb:10
 
 ### Test Suite Breakdown
 
-**Total: 308 tests - ALL PASSING ✅**
+**Total: 318 tests - ALL PASSING ✅**
 
 - **API Endpoints**: 52 tests
   - Recipes API: 39 tests (CRUD, filtering, sorting, pagination consistency)
@@ -77,8 +77,8 @@ dcrspec spec/models/recipe_spec.rb:10
   - Authors API: 6 tests (index, contextual filtering)
   - Health Check: 1 test
 
-- **Models**: 155 tests (Recipe, Category, Author)
-  - Recipe: 109 tests
+- **Models**: 163 tests (Recipe, Category, Author)
+  - Recipe: 117 tests
     - Validations (title, ingredients, ratings, cook_time, prep_time)
     - Associations (category, author)
     - Filtering scopes (by_category_id, by_author_id)
@@ -119,7 +119,7 @@ These tests ensure that pagination remains consistent when recipes have identica
 
 ## Current Status
 
-✅ All 308 tests passing
+✅ All 318 tests passing
 ✅ Development DB automatically protected (10,013 recipes safe)
 ✅ Test DB properly isolated
 ✅ No need to remember RAILS_ENV - it's automatic!

@@ -1,10 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe 'Api::V1::Recipes', type: :request do
-  let(:category_italian) { create(:category, name: 'Italian') }
-  let(:category_desserts) { create(:category, name: 'Desserts') }
-  let(:author_john) { create(:author, name: 'Chef John') }
-  let(:author_gordon) { create(:author, name: 'Gordon Ramsay') }
+  let!(:category_italian) { create(:category, name: 'Italian') }
+  let!(:category_desserts) { create(:category, name: 'Desserts') }
+  let!(:author_john) { create(:author, name: 'Chef John') }
+  let!(:author_gordon) { create(:author, name: 'Gordon Ramsay') }
   let(:json) { json_response }
 
   describe 'GET /api/v1/recipes' do

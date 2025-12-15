@@ -267,6 +267,22 @@ RSpec.describe Recipe, type: :model do
           expect(results.first).to eq(recipe2) # 1 day ago
           expect(results.second).to eq(recipe1) # 2 days ago
         end
+
+        it 'uses ID as tie-breaker for consistent ordering when created_at is identical' do
+          timestamp = 2.days.ago
+          recipe_a = create(:recipe, created_at: timestamp, updated_at: timestamp)
+          recipe_b = create(:recipe, created_at: timestamp, updated_at: timestamp)
+          recipe_c = create(:recipe, created_at: timestamp, updated_at: timestamp)
+
+          # Sort IDs to determine expected order (highest ID first since we sort desc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id).reverse
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_created_desc
+            expect(results.to_a).to eq(expected_order)
+          end
+        end
       end
 
       describe '.sorted_by_created_asc' do
@@ -274,6 +290,22 @@ RSpec.describe Recipe, type: :model do
           results = Recipe.sorted_by_created_asc.limit(2)
           expect(results.first).to eq(recipe4) # 4 days ago
           expect(results.second).to eq(recipe3) # 3 days ago
+        end
+
+        it 'uses ID as tie-breaker for consistent ordering when created_at is identical' do
+          timestamp = 2.days.ago
+          recipe_a = create(:recipe, created_at: timestamp, updated_at: timestamp)
+          recipe_b = create(:recipe, created_at: timestamp, updated_at: timestamp)
+          recipe_c = create(:recipe, created_at: timestamp, updated_at: timestamp)
+
+          # Sort IDs to determine expected order (lowest ID first since we sort asc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id)
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_created_asc
+            expect(results.to_a).to eq(expected_order)
+          end
         end
       end
 
@@ -283,6 +315,21 @@ RSpec.describe Recipe, type: :model do
           expect(results.first.title).to eq('Margherita Pizza')
           expect(results.second.title).to eq('Penne Arrabbiata')
         end
+
+        it 'uses ID as tie-breaker for consistent ordering when title is identical' do
+          recipe_a = create(:recipe, title: 'Identical Title')
+          recipe_b = create(:recipe, title: 'Identical Title')
+          recipe_c = create(:recipe, title: 'Identical Title')
+
+          # Sort IDs to determine expected order (lowest ID first since we sort asc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id)
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_title_asc
+            expect(results.to_a).to eq(expected_order)
+          end
+        end
       end
 
       describe '.sorted_by_title_desc' do
@@ -290,6 +337,21 @@ RSpec.describe Recipe, type: :model do
           results = Recipe.sorted_by_title_desc.limit(2)
           expect(results.first.title).to eq('Spaghetti Carbonara')
           expect(results.second.title).to eq('Pepperoni Pizza')
+        end
+
+        it 'uses ID as tie-breaker for consistent ordering when title is identical' do
+          recipe_a = create(:recipe, title: 'Identical Title')
+          recipe_b = create(:recipe, title: 'Identical Title')
+          recipe_c = create(:recipe, title: 'Identical Title')
+
+          # Sort IDs to determine expected order (highest ID first since we sort desc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id).reverse
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_title_desc
+            expect(results.to_a).to eq(expected_order)
+          end
         end
       end
 
@@ -307,6 +369,22 @@ RSpec.describe Recipe, type: :model do
           # Recipe without author should be included
           expect(Recipe.sorted_by_author_asc.to_a).to include(recipe_without_author)
         end
+
+        it 'uses ID as tie-breaker for consistent ordering when author is identical' do
+          author = create(:author, name: 'Same Author')
+          recipe_a = create(:recipe, author: author)
+          recipe_b = create(:recipe, author: author)
+          recipe_c = create(:recipe, author: author)
+
+          # Sort IDs to determine expected order (lowest ID first since we sort asc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id)
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_author_asc
+            expect(results.to_a).to eq(expected_order)
+          end
+        end
       end
 
       describe '.sorted_by_author_desc' do
@@ -322,6 +400,22 @@ RSpec.describe Recipe, type: :model do
           expect(sorted_count).to eq(total_count)
           # Recipe without author should be included
           expect(Recipe.sorted_by_author_desc.to_a).to include(recipe_without_author)
+        end
+
+        it 'uses ID as tie-breaker for consistent ordering when author is identical' do
+          author = create(:author, name: 'Same Author')
+          recipe_a = create(:recipe, author: author)
+          recipe_b = create(:recipe, author: author)
+          recipe_c = create(:recipe, author: author)
+
+          # Sort IDs to determine expected order (highest ID first since we sort desc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id).reverse
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_author_desc
+            expect(results.to_a).to eq(expected_order)
+          end
         end
       end
 
@@ -339,6 +433,22 @@ RSpec.describe Recipe, type: :model do
           # Recipe without category should be included
           expect(Recipe.sorted_by_category_asc.to_a).to include(recipe_without_category)
         end
+
+        it 'uses ID as tie-breaker for consistent ordering when category is identical' do
+          category = create(:category, name: 'Same Category')
+          recipe_a = create(:recipe, category: category)
+          recipe_b = create(:recipe, category: category)
+          recipe_c = create(:recipe, category: category)
+
+          # Sort IDs to determine expected order (lowest ID first since we sort asc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id)
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_category_asc
+            expect(results.to_a).to eq(expected_order)
+          end
+        end
       end
 
       describe '.sorted_by_category_desc' do
@@ -354,6 +464,22 @@ RSpec.describe Recipe, type: :model do
           expect(sorted_count).to eq(total_count)
           # Recipe without category should be included
           expect(Recipe.sorted_by_category_desc.to_a).to include(recipe_without_category)
+        end
+
+        it 'uses ID as tie-breaker for consistent ordering when category is identical' do
+          category = create(:category, name: 'Same Category')
+          recipe_a = create(:recipe, category: category)
+          recipe_b = create(:recipe, category: category)
+          recipe_c = create(:recipe, category: category)
+
+          # Sort IDs to determine expected order (highest ID first since we sort desc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id).reverse
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_category_desc
+            expect(results.to_a).to eq(expected_order)
+          end
         end
       end
 
