@@ -69,6 +69,9 @@ RSpec.configure do |config|
   # Include FactoryBot methods
   config.include FactoryBot::Syntax::Methods
 
+  # Include ActiveSupport time helpers for time freezing in tests
+  config.include ActiveSupport::Testing::TimeHelpers
+
   # Configure default host for request specs
   config.before(:each, type: :request) do
     host! 'localhost'
