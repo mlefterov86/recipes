@@ -73,7 +73,7 @@ end
 
 group :test do
   # Shoulda Matchers for additional RSpec matchers [https://github.com/thoughtbot/shoulda-matchers]
-  gem "shoulda-matchers", "~> 6.0"
+  gem "shoulda-matchers", "~> 7.0"
 
   # Database Cleaner for cleaning test database [https://github.com/DatabaseCleaner/database_cleaner]
   gem "database_cleaner-active_record"
