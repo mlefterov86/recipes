@@ -30,7 +30,7 @@ class Recipe < ApplicationRecord
   scope :sorted_by_author_desc, -> { left_joins(:author).order("authors.name DESC NULLS LAST") }
   scope :sorted_by_category_asc, -> { left_joins(:category).order("categories.name ASC NULLS LAST") }
   scope :sorted_by_category_desc, -> { left_joins(:category).order("categories.name DESC NULLS LAST") }
-  scope :sorted_by_default, -> { order(ratings: :desc, created_at: :desc) }
+  scope :sorted_by_default, -> { order(ratings: :desc, created_at: :desc, id: :desc) }
 
   # Dynamic sorting scope
   scope :sorted_by, ->(sort_option) {

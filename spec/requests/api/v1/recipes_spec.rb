@@ -288,6 +288,75 @@ RSpec.describe 'Api::V1::Recipes', type: :request do
       end
     end
 
+    context 'with pagination ordering consistency' do
+      before do
+        # Create 5 recipes with identical ratings to test ID tie-breaker
+        # When ratings are identical, ID should be used for consistent ordering
+        5.times do |i|
+          create(:recipe,
+            title: "Recipe #{i}",
+            ratings: 4.5
+          )
+        end
+      end
+
+      it 'returns the same results when requesting page 1 multiple times' do
+        get '/api/v1/recipes', params: { page: 1, per_page: 2 }
+        first_request_ids = json[:data].map { |r| r[:id] }
+
+        get '/api/v1/recipes', params: { page: 1, per_page: 2 }
+        second_request_ids = json[:data].map { |r| r[:id] }
+
+        expect(second_request_ids).to eq(first_request_ids)
+      end
+
+      it 'returns the same results when requesting page 2 multiple times' do
+        get '/api/v1/recipes', params: { page: 2, per_page: 2 }
+        first_request_ids = json[:data].map { |r| r[:id] }
+
+        get '/api/v1/recipes', params: { page: 2, per_page: 2 }
+        second_request_ids = json[:data].map { |r| r[:id] }
+
+        expect(second_request_ids).to eq(first_request_ids)
+      end
+
+      it 'page 1 returns the expected first 2 recipes sorted by ID desc' do
+        # Calculate expected IDs for page 1 (LIMIT 2 OFFSET 0)
+        expected_ids = Recipe.sorted_by_default.limit(2).offset(0).pluck(:id)
+
+        get '/api/v1/recipes?page=1&per_page=2'
+
+        expect(json[:meta][:current_page]).to eq(1)
+        expect(json[:data].length).to eq(2)
+        actual_ids = json[:data].map { |r| r[:id] }
+        expect(actual_ids).to eq(expected_ids)
+      end
+
+      it 'page 2 returns the expected next 2 recipes sorted by ID desc' do
+        # Calculate expected IDs for page 2 (LIMIT 2 OFFSET 2)
+        expected_ids = Recipe.sorted_by_default.limit(2).offset(2).pluck(:id)
+
+        get '/api/v1/recipes?page=2&per_page=2'
+
+        expect(json[:meta][:current_page]).to eq(2)
+        expect(json[:data].length).to eq(2)
+        actual_ids = json[:data].map { |r| r[:id] }
+        expect(actual_ids).to eq(expected_ids)
+      end
+
+      it 'page 3 returns the expected last recipe sorted by ID desc' do
+        # Calculate expected IDs for page 3 (LIMIT 2 OFFSET 4, but only 1 recipe left)
+        expected_ids = Recipe.sorted_by_default.limit(2).offset(4).pluck(:id)
+
+        get '/api/v1/recipes?page=3&per_page=2'
+
+        expect(json[:meta][:current_page]).to eq(3)
+        expect(json[:data].length).to eq(1)
+        actual_ids = json[:data].map { |r| r[:id] }
+        expect(actual_ids).to eq(expected_ids)
+      end
+    end
+
     context 'with recipes without associations' do
       let!(:recipe) { create(:recipe, category: nil, author: nil) }
 

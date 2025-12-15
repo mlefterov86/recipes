@@ -363,6 +363,22 @@ RSpec.describe Recipe, type: :model do
           expect(results.first).to eq(recipe2) # 4.8, 1 day ago
           expect(results.second).to eq(recipe1) # 4.5, 2 days ago
         end
+
+        it 'uses ID as tie-breaker for consistent ordering when rating and created_at are identical' do
+          timestamp = 1.day.ago
+          recipe_a = create(:recipe, ratings: 4.5, created_at: timestamp, updated_at: timestamp)
+          recipe_b = create(:recipe, ratings: 4.5, created_at: timestamp, updated_at: timestamp)
+          recipe_c = create(:recipe, ratings: 4.5, created_at: timestamp, updated_at: timestamp)
+
+          # Sort IDs to determine expected order (highest ID first since we sort desc)
+          expected_order = [ recipe_a, recipe_b, recipe_c ].sort_by(&:id).reverse
+
+          # Run query multiple times to ensure consistent results
+          3.times do
+            results = Recipe.where(id: [ recipe_a.id, recipe_b.id, recipe_c.id ]).sorted_by_default
+            expect(results.to_a).to eq(expected_order)
+          end
+        end
       end
     end
 
