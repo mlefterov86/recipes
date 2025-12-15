@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 interface Option {
   id: string
   name: string
+  recipes_count?: number
 }
 
 interface SearchableSelectProps {
@@ -160,7 +161,10 @@ function SearchableSelect({ value, options, onChange, placeholder = 'Select...',
                     index === highlightedIndex ? 'bg-blue-100' : 'text-gray-900'
                   }`}
                 >
-                  {option.name}
+                  <span>{option.name}</span>
+                  {option.recipes_count !== undefined && (
+                    <span className="text-gray-500 text-sm ml-1">({option.recipes_count})</span>
+                  )}
                 </button>
               ))
             )}

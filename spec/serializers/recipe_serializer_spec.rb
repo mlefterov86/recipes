@@ -33,11 +33,11 @@ RSpec.describe RecipeSerializer do
     end
 
     it 'includes serialized category' do
-      expect(json[:category]).to eq({ id: category.id, name: 'Italian' })
+      expect(json[:category]).to eq({ id: category.id, name: 'Italian', recipes_count: 1 })
     end
 
     it 'includes serialized author' do
-      expect(json[:author]).to eq({ id: author.id, name: 'Chef John' })
+      expect(json[:author]).to eq({ id: author.id, name: 'Chef John', recipes_count: 1 })
     end
 
     it 'includes ingredients array' do
@@ -98,11 +98,11 @@ RSpec.describe RecipeSerializer do
     end
 
     it 'includes nested category' do
-      expect(json[:category]).to eq({ id: category.id, name: 'Italian' })
+      expect(json[:category]).to eq({ id: category.id, name: 'Italian', recipes_count: 1 })
     end
 
     it 'includes nested author' do
-      expect(json[:author]).to eq({ id: author.id, name: 'Chef John' })
+      expect(json[:author]).to eq({ id: author.id, name: 'Chef John', recipes_count: 1 })
     end
   end
 end
