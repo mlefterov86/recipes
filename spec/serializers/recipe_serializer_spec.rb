@@ -64,11 +64,11 @@ RSpec.describe RecipeSerializer do
       end
     end
 
-    context 'when recipe has no ratings' do
-      let(:recipe) { create(:recipe, ratings: nil) }
+    context 'when recipe has default ratings' do
+      let(:recipe) { create(:recipe, ratings: 0.0) }
 
-      it 'returns nil for ratings' do
-        expect(json[:ratings]).to be_nil
+      it 'returns 0.0 for ratings' do
+        expect(json[:ratings]).to eq(0.0)
       end
     end
 

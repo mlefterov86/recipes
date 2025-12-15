@@ -78,7 +78,7 @@ class Recipe < ApplicationRecord
 
     # Execute raw SQL to update the tsvector column
     self.class.connection.execute(
-      "UPDATE recipes SET searchable = to_tsvector('english', #{self.class.connection.quote(cleaned_text)}) WHERE id = #{id}"
+      "UPDATE recipes SET searchable = to_tsvector('english', #{self.class.connection.quote(cleaned_text)}) WHERE id = #{self.class.connection.quote(id)}"
     )
 
     # Reload the searchable attribute so it's available in tests
@@ -87,7 +87,7 @@ class Recipe < ApplicationRecord
 
   def reload_searchable
     self.searchable = self.class.connection.select_value(
-      "SELECT searchable FROM recipes WHERE id = #{id}"
+      "SELECT searchable FROM recipes WHERE id = #{self.class.connection.quote(id)}"
     )
   end
 

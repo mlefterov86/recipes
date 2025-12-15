@@ -299,13 +299,13 @@ RSpec.describe 'Api::V1::Recipes', type: :request do
       end
     end
 
-    context 'with recipes without ratings' do
-      let!(:recipe) { create(:recipe, ratings: nil, category: category_italian, author: author_john) }
+    context 'with recipes with default ratings' do
+      let!(:recipe) { create(:recipe, ratings: 0.0, category: category_italian, author: author_john) }
 
-      it 'returns recipe with nil ratings' do
+      it 'returns recipe with 0.0 ratings' do
         get '/api/v1/recipes'
 
-        expect(json[:data].first[:ratings]).to be_nil
+        expect(json[:data].first[:ratings]).to eq(0.0)
       end
     end
   end
