@@ -15,6 +15,7 @@ This document describes the normalized database schema for the Recipes applicati
 ## Overview
 
 The schema uses a **normalized design** with separate tables for categories and authors, combined with:
+- **UUID primary keys** (via pgcrypto extension) instead of integer IDs for better distributed systems support
 - **Compound indexes** for fast structured queries (category + author + rating filters)
 - **PostgreSQL tsvector** for full-text search (ingredients, titles, etc.)
 
@@ -53,7 +54,7 @@ Stores recipe categories (e.g., "Cornbread", "Pizza", "Muffins")
 
 | Column         | Type      | Constraints              | Description                              |
 |----------------|-----------|--------------------------|------------------------------------------|
-| id             | bigint    | PRIMARY KEY              | Auto-incrementing ID                     |
+| id             | uuid      | PRIMARY KEY              | UUID primary key (pgcrypto)              |
 | name           | string    | NOT NULL, UNIQUE         | Category name                            |
 | recipes_count  | integer   | DEFAULT 0, NOT NULL      | Counter cache: number of recipes         |
 | authors_count  | integer   | DEFAULT 0, NOT NULL      | Cached: number of distinct authors       |
@@ -80,7 +81,7 @@ Stores recipe authors (e.g., "Chef John", "bluegirl")
 
 | Column            | Type      | Constraints              | Description                              |
 |-------------------|-----------|--------------------------|------------------------------------------|
-| id                | bigint    | PRIMARY KEY              | Auto-incrementing ID                     |
+| id                | uuid      | PRIMARY KEY              | UUID primary key (pgcrypto)              |
 | name              | string    | NOT NULL, UNIQUE         | Author name                              |
 | recipes_count     | integer   | DEFAULT 0, NOT NULL      | Counter cache: number of recipes         |
 | categories_count  | integer   | DEFAULT 0, NOT NULL      | Cached: number of distinct categories    |
@@ -105,21 +106,21 @@ Stores recipe authors (e.g., "Chef John", "bluegirl")
 
 Main table storing recipe data with foreign keys to categories and authors
 
-| Column       | Type           | Constraints              | Description                              |
-|--------------|----------------|--------------------------|------------------------------------------|
-| id           | bigint         | PRIMARY KEY              | Auto-incrementing ID                     |
-| title        | string         | NOT NULL                 | Recipe title                             |
-| cook_time    | integer        | NULL                     | Cooking time in minutes                  |
-| prep_time    | integer        | NULL                     | Preparation time in minutes              |
-| ingredients  | jsonb          | NOT NULL, DEFAULT []     | Array of ingredient strings              |
-| ratings      | decimal(3,2)   | NULL                     | Rating from 0.00 to 5.00                 |
-| cuisine      | string         | NULL                     | Cuisine type (e.g., "Italian")           |
-| category_id  | bigint         | FOREIGN KEY, NULL        | References categories(id)                |
-| author_id    | bigint         | FOREIGN KEY, NULL        | References authors(id)                   |
-| image_url    | string         | NULL                     | URL to recipe image                      |
-| searchable   | tsvector       | NULL                     | Full-text search vector                  |
-| created_at   | datetime       | NOT NULL                 | Timestamp when created                   |
-| updated_at   | datetime       | NOT NULL                 | Timestamp when last updated              |
+| Column       | Type           | Constraints                  | Description                              |
+|--------------|----------------|------------------------------|------------------------------------------|
+| id           | uuid           | PRIMARY KEY                  | UUID primary key (pgcrypto)              |
+| title        | string         | NOT NULL                     | Recipe title                             |
+| cook_time    | integer        | NOT NULL, DEFAULT 0          | Cooking time in minutes                  |
+| prep_time    | integer        | NOT NULL, DEFAULT 0          | Preparation time in minutes              |
+| ingredients  | jsonb          | NOT NULL, DEFAULT []         | Array of ingredient strings              |
+| ratings      | decimal(3,2)   | NOT NULL, DEFAULT 0.00       | Rating from 0.00 to 5.00                 |
+| cuisine      | string         | NULL                         | Cuisine type (e.g., "Italian")           |
+| category_id  | uuid           | FOREIGN KEY, NULL            | References categories(id)                |
+| author_id    | uuid           | FOREIGN KEY, NULL            | References authors(id)                   |
+| image_url    | string         | NULL                         | URL to recipe image                      |
+| searchable   | tsvector       | NULL                         | Full-text search vector                  |
+| created_at   | datetime       | NOT NULL                     | Timestamp when created                   |
+| updated_at   | datetime       | NOT NULL                     | Timestamp when last updated              |
 
 **Indexes:**
 - Primary key on `id` (automatic)
@@ -243,18 +244,19 @@ We use the `strong_migrations` gem to catch unsafe migrations that could cause d
 
 ## Migrations
 
-### Step 1: Create Categories Table
+This project uses **UUID primary keys** instead of traditional integer IDs for better distributed systems support and security.
 
-```bash
-rails generate migration CreateCategories name:string:uniq
-```
+### Step 1: Create Categories Table
 
 **Migration file:**
 ```ruby
-# db/migrate/XXXXXX_create_categories.rb
+# db/migrate/20251213095228_create_categories.rb
 class CreateCategories < ActiveRecord::Migration[8.1]
   def change
-    create_table :categories do |t|
+    # Enable UUID extension for PostgreSQL
+    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
+
+    create_table :categories, id: :uuid do |t|
       t.string :name, null: false
 
       # Counter caches
@@ -269,20 +271,24 @@ class CreateCategories < ActiveRecord::Migration[8.1]
 end
 ```
 
+**Key features:**
+- Uses `id: :uuid` for UUID primary keys
+- Enables `pgcrypto` extension for UUID generation
+- Includes counter cache columns
+
 ---
 
 ### Step 2: Create Authors Table
 
-```bash
-rails generate migration CreateAuthors name:string:uniq
-```
-
 **Migration file:**
 ```ruby
-# db/migrate/XXXXXX_create_authors.rb
+# db/migrate/20251213095308_create_authors.rb
 class CreateAuthors < ActiveRecord::Migration[8.1]
   def change
-    create_table :authors do |t|
+    # Enable UUID extension for PostgreSQL
+    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
+
+    create_table :authors, id: :uuid do |t|
       t.string :name, null: false
 
       # Counter caches
@@ -297,31 +303,35 @@ class CreateAuthors < ActiveRecord::Migration[8.1]
 end
 ```
 
+**Key features:**
+- Uses `id: :uuid` for UUID primary keys
+- Enables `pgcrypto` extension (safe to call multiple times)
+- Includes counter cache columns
+
 ---
 
 ### Step 3: Create Recipes Table with All Indexes
 
-```bash
-rails generate migration CreateRecipes
-```
-
 **Migration file:**
 ```ruby
-# db/migrate/XXXXXX_create_recipes.rb
+# db/migrate/20251213095324_create_recipes.rb
 class CreateRecipes < ActiveRecord::Migration[8.1]
   # Note: disable_ddl_transaction! is NOT needed for creating new tables
   # It's only needed when adding indexes to EXISTING tables with data
 
   def change
-    create_table :recipes do |t|
+    # Enable UUID extension for PostgreSQL
+    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
+
+    create_table :recipes, id: :uuid do |t|
       t.string :title, null: false
-      t.integer :cook_time
-      t.integer :prep_time
+      t.integer :cook_time, null: false, default: 0
+      t.integer :prep_time, null: false, default: 0
       t.jsonb :ingredients, null: false, default: []
-      t.decimal :ratings, precision: 3, scale: 2
+      t.decimal :ratings, precision: 3, scale: 2, null: false, default: 0.00
       t.string :cuisine
-      t.references :category, foreign_key: true
-      t.references :author, foreign_key: true
+      t.references :category, type: :uuid, foreign_key: true
+      t.references :author, type: :uuid, foreign_key: true
       t.string :image_url
 
       # Full-text search column
@@ -339,19 +349,19 @@ class CreateRecipes < ActiveRecord::Migration[8.1]
 
     # Composite index: Category + Rating
     # For queries like "top rated recipes in Cornbread category"
-    add_index :recipes, [:category_id, :ratings],
+    add_index :recipes, [ :category_id, :ratings ],
               order: { ratings: :desc },
               name: 'index_recipes_on_category_and_ratings'
 
     # Composite index: Author + Rating
     # For queries like "Chef John's top rated recipes"
-    add_index :recipes, [:author_id, :ratings],
+    add_index :recipes, [ :author_id, :ratings ],
               order: { ratings: :desc },
               name: 'index_recipes_on_author_and_ratings'
 
     # Composite index: Category + Author + Rating
     # For queries like "Chef John's top rated Cornbread recipes"
-    add_index :recipes, [:category_id, :author_id, :ratings],
+    add_index :recipes, [ :category_id, :author_id, :ratings ],
               order: { ratings: :desc },
               name: 'index_recipes_on_category_author_ratings'
 
@@ -369,6 +379,12 @@ class CreateRecipes < ActiveRecord::Migration[8.1]
   end
 end
 ```
+
+**Key features:**
+- Uses `id: :uuid` for UUID primary keys
+- Foreign keys use `type: :uuid` to reference UUID columns
+- NOT NULL constraints with sensible defaults (0 for times/ratings, [] for ingredients)
+- All indexes created in a single migration (safe for new tables)
 
 **Why this is safe:**
 - ✅ Creating new table = no existing data
@@ -418,41 +434,6 @@ end
 
 ---
 
-### Step 5: Run Migrations
-
-**First, install strong_migrations:**
-```bash
-# Install the gem
-docker exec recipes-web-1 bundle install
-
-# Generate strong_migrations config
-docker exec recipes-web-1 rails generate strong_migrations:install
-```
-
-**Then run migrations:**
-```bash
-# Using docker exec
-docker exec recipes-web-1 bundle exec rails db:migrate
-
-# Or using docker compose (from project directory)
-docker compose exec web bundle exec rails db:migrate
-
-# Or locally (if not using Docker)
-rails db:migrate
-```
-
-**What to expect:**
-- ✅ All migrations should run without warnings
-- ✅ strong_migrations recognizes these are new tables
-- ✅ Indexes are created safely
-
-**If you see warnings:**
-- Read them carefully
-- For initial setup, they're informational
-- For production changes, follow the suggestions
-
----
-
 ## Model Definitions
 
 ### Category Model
@@ -460,37 +441,21 @@ rails db:migrate
 ```ruby
 # app/models/category.rb
 class Category < ApplicationRecord
-  # === Associations ===
   has_many :recipes, dependent: :nullify
   has_many :authors, -> { distinct }, through: :recipes
 
-  # === Validations ===
-  validates :name, presence: true, uniqueness: { case_sensitive: false }
+  validates :name, presence: true, uniqueness: true
 
-  # === Callbacks ===
-  before_save :normalize_name
+  before_validation :normalize_name
 
-  # === Scopes ===
-  scope :with_recipes, -> { joins(:recipes).distinct }
-  scope :by_name, -> { order(:name) }
-
-  # Now uses counter_cache - much faster!
-  scope :popular, -> { order(recipes_count: :desc) }
-  scope :with_multiple_authors, -> { where("authors_count > 1") }
-
-  # === Instance Methods ===
-
-  # Get top rated recipes in this category
-  def top_recipes(limit = 10)
-    recipes.where("ratings >= 4.0")
-           .order(ratings: :desc)
-           .limit(limit)
-  end
-
-  # Get average rating
-  def average_rating
-    recipes.average(:ratings)&.round(2)
-  end
+  # Scope to filter categories that have recipes by a specific author
+  scope :by_author, ->(author_id = nil) {
+    if author_id.present?
+      joins(:recipes).where(recipes: { author_id: author_id }).distinct
+    else
+      all
+    end
+  }
 
   # Refresh the authors_count cache (call after bulk operations)
   def refresh_authors_count!
@@ -500,7 +465,7 @@ class Category < ApplicationRecord
   private
 
   def normalize_name
-    self.name = name.strip.titleize
+    self.name = name.strip.titleize if name.present?
   end
 end
 ```
@@ -512,47 +477,21 @@ end
 ```ruby
 # app/models/author.rb
 class Author < ApplicationRecord
-  # === Associations ===
   has_many :recipes, dependent: :nullify
   has_many :categories, -> { distinct }, through: :recipes
 
-  # === Validations ===
   validates :name, presence: true, uniqueness: { case_sensitive: false }
 
-  # === Callbacks ===
-  before_save :normalize_name
+  before_validation :normalize_name
 
-  # === Scopes ===
-  scope :with_recipes, -> { joins(:recipes).distinct }
-  scope :by_name, -> { order(:name) }
-
-  # Now uses counter_cache - much faster!
-  scope :prolific, -> { order(recipes_count: :desc) }
-  scope :versatile, -> { order(categories_count: :desc) }
-  scope :highly_rated, -> {
-    joins(:recipes)
-      .group('authors.id')
-      .having('AVG(recipes.ratings) >= 4.5')
+  # Scope to filter authors that have recipes in a specific category
+  scope :by_category, ->(category_id = nil) {
+    if category_id.present?
+      joins(:recipes).where(recipes: { category_id: category_id }).distinct
+    else
+      all
+    end
   }
-
-  # === Instance Methods ===
-
-  # Get author's top rated recipes
-  def top_recipes(limit = 10)
-    recipes.where("ratings >= 4.0")
-           .order(ratings: :desc)
-           .limit(limit)
-  end
-
-  # Get average rating
-  def average_rating
-    recipes.average(:ratings)&.round(2)
-  end
-
-  # Get categories this author has written recipes for
-  def category_list
-    categories.pluck(:name)
-  end
 
   # Refresh the categories_count cache (call after bulk operations)
   def refresh_categories_count!
@@ -562,7 +501,7 @@ class Author < ApplicationRecord
   private
 
   def normalize_name
-    self.name = name.strip
+    self.name = name.strip if name.present?
   end
 end
 ```
@@ -574,55 +513,37 @@ end
 ```ruby
 # app/models/recipe.rb
 class Recipe < ApplicationRecord
-  # === Associations ===
   belongs_to :category, optional: true, counter_cache: true
   belongs_to :author, optional: true, counter_cache: true
 
-  # === Validations ===
   validates :title, presence: true
   validates :ingredients, presence: true
-  validates :ratings, numericality: {
-    greater_than_or_equal_to: 0,
-    less_than_or_equal_to: 5,
-    allow_nil: true
-  }
-  validates :cook_time, numericality: {
-    greater_than_or_equal_to: 0,
-    allow_nil: true
-  }
-  validates :prep_time, numericality: {
-    greater_than_or_equal_to: 0,
-    allow_nil: true
-  }
+  validates :ratings, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 5 }
+  validates :cook_time, numericality: { greater_than_or_equal_to: 0 }
+  validates :prep_time, numericality: { greater_than_or_equal_to: 0 }
 
-  # === Callbacks ===
   after_save :update_searchable_tsvector
-  after_commit :update_parent_counters, on: [:create, :update]
+  after_commit :update_parent_counters, on: [ :create, :update ]
   after_destroy :decrement_parent_counters
 
   # === Scopes for filtering ===
   scope :by_category_id, ->(category_id) { where(category_id: category_id) if category_id.present? }
   scope :by_author_id, ->(author_id) { where(author_id: author_id) if author_id.present? }
   scope :search_title, ->(query) { where("title ILIKE ?", "%#{sanitize_sql_like(query)}%") if query.present? }
-  scope :search_ingredient, ->(query) {
-    where("EXISTS (SELECT 1 FROM jsonb_array_elements_text(ingredients) AS ingredient WHERE ingredient ILIKE ?)",
-          "%#{sanitize_sql_like(query)}%") if query.present?
-  }
+  scope :search_ingredient, ->(query) { where("EXISTS (SELECT 1 FROM jsonb_array_elements_text(ingredients) AS ingredient WHERE ingredient ILIKE ?)", "%#{sanitize_sql_like(query)}%") if query.present? }
   scope :full_text_search, ->(query) { where("searchable @@ plainto_tsquery('english', ?)", query) if query.present? }
 
   # === Scopes for sorting ===
   scope :sorted_by_rating_desc, -> { order(ratings: :desc, id: :desc) }
   scope :sorted_by_rating_asc, -> { order(ratings: :asc, id: :asc) }
-  scope :sorted_by_created_desc, -> { order(created_at: :desc) }
-  scope :sorted_by_created_asc, -> { order(created_at: :asc) }
-  scope :sorted_by_title_asc, -> { order(title: :asc) }
-  scope :sorted_by_title_desc, -> { order(title: :desc) }
-  scope :sorted_by_author_asc, -> { left_joins(:author).order("authors.name ASC NULLS LAST") }
-  scope :sorted_by_author_desc, -> { left_joins(:author).order("authors.name DESC NULLS LAST") }
-  scope :sorted_by_category_asc, -> { left_joins(:category).order("categories.name ASC NULLS LAST") }
-  scope :sorted_by_category_desc, -> { left_joins(:category).order("categories.name DESC NULLS LAST") }
-
-  # Default sorting with ID tie-breaker for pagination stability
+  scope :sorted_by_created_desc, -> { order(created_at: :desc, id: :desc) }
+  scope :sorted_by_created_asc, -> { order(created_at: :asc, id: :asc) }
+  scope :sorted_by_title_asc, -> { order(title: :asc, id: :asc) }
+  scope :sorted_by_title_desc, -> { order(title: :desc, id: :desc) }
+  scope :sorted_by_author_asc, -> { left_joins(:author).order("authors.name ASC NULLS LAST, recipes.id ASC") }
+  scope :sorted_by_author_desc, -> { left_joins(:author).order("authors.name DESC NULLS LAST, recipes.id DESC") }
+  scope :sorted_by_category_asc, -> { left_joins(:category).order("categories.name ASC NULLS LAST, recipes.id ASC") }
+  scope :sorted_by_category_desc, -> { left_joins(:category).order("categories.name DESC NULLS LAST, recipes.id DESC") }
   scope :sorted_by_default, -> { order(ratings: :desc, created_at: :desc, id: :desc) }
 
   # Dynamic sorting scope
@@ -820,18 +741,18 @@ Category.where("authors_count >= 10").order(authors_count: :desc)
 **Usage:** "How many total recipes are in the database?"
 
 ```ruby
-# ❌ Without optimization (slower - table scan/estimate)
+# Direct count (standard approach)
 Recipe.count  # SELECT COUNT(*) FROM recipes (~10-50ms on large tables)
 
-# ✅ With counter_cache aggregation (fastest - sums pre-cached counts)
+# ✅ Alternative: Counter cache aggregation (faster)
 Category.sum(:recipes_count)  # SELECT SUM(recipes_count) FROM categories (~1-5ms)
 # OR
 Author.sum(:recipes_count)    # SELECT SUM(recipes_count) FROM authors (~1-5ms)
 ```
 
-**Implementation:**
+**Optional Enhancement (Not Currently Implemented):**
 
-Add a helper method to access global count efficiently:
+You could add a helper method to access global count efficiently:
 
 ```ruby
 # app/models/recipe.rb
@@ -848,7 +769,7 @@ end
 Recipe.total_count  # => 12543 (instant!)
 ```
 
-**Or create a concern for statistics:**
+**Or create a concern for statistics (Optional):**
 
 ```ruby
 # app/models/concerns/recipe_statistics.rb
@@ -857,7 +778,6 @@ module RecipeStatistics
 
   class_methods do
     def total_count
-      # Sum all category counter caches
       Category.sum(:recipes_count)
     end
 
@@ -888,29 +808,15 @@ class Recipe < ApplicationRecord
   include RecipeStatistics
   # ... rest of model ...
 end
-
-# Usage examples:
-Recipe.total_count              # => 12543
-Recipe.total_count_by_category  # => [{ name: "Pizza", recipes_count: 567 }, ...]
-Recipe.total_count_by_author    # => [{ name: "Chef John", recipes_count: 147 }, ...]
-Recipe.total_authors            # => 234
-Recipe.total_categories         # => 45
 ```
 
 **Performance comparison:**
 
 | Method | Query | Time | Notes |
 |--------|-------|------|-------|
-| `Recipe.count` | Full table scan or estimate | ~10-50ms | Acceptable for most cases |
+| `Recipe.count` | Full table scan or estimate | ~10-50ms | Current implementation |
 | `Category.sum(:recipes_count)` | Sum ~50 integers | ~1-5ms | **10x faster!** |
 | `Author.sum(:recipes_count)` | Sum ~200 integers | ~1-5ms | **10x faster!** |
-
-**When to use each:**
-
-- **Development/Testing:** `Recipe.count` is fine (simple, accurate)
-- **Production API:** Use `Recipe.total_count` (leverages counter caches)
-- **Admin Dashboard:** Either works, but counter cache is faster
-- **Public Stats Page:** Definitely use `Recipe.total_count` for best performance
 
 **Note:** Both `Category.sum(:recipes_count)` and `Author.sum(:recipes_count)` should give the same result since every recipe is counted in both tables. Choose whichever table typically has fewer rows (usually categories).
 
@@ -1016,7 +922,7 @@ recipe.update!(author: bluegirl)  # Changed from chef_john to bluegirl
 
 #### Fixing Out-of-Sync Counters
 
-If counters get out of sync (after bulk operations or migrations):
+If counters get out of sync (after bulk operations or migrations), you can reset them manually:
 
 ```ruby
 # Fix all category counters
@@ -1030,9 +936,12 @@ Author.find_each do |author|
   Author.reset_counters(author.id, :recipes)
   author.refresh_categories_count!
 end
+```
 
-# Or use a rake task
-# lib/tasks/counter_cache.rake
+**Optional: Create a rake task for easier maintenance:**
+
+```ruby
+# lib/tasks/counter_cache.rake (not currently in project)
 namespace :counters do
   desc "Reset all counter caches"
   task reset_all: :environment do
@@ -1051,6 +960,8 @@ namespace :counters do
     puts "✅ All counters reset successfully!"
   end
 end
+
+# Usage: rails counters:reset_all
 ```
 
 ---
@@ -1066,14 +977,12 @@ With counter caches, your API responses become much faster:
   {
     "id": 1,
     "name": "Cornbread",
-    "recipes_count": 234,      # ⚡ Instant
-    "authors_count": 87         # ⚡ Instant
+    "recipes_count": 234      # ⚡ Instant (from counter cache)
   },
   {
     "id": 2,
     "name": "Pizza",
-    "recipes_count": 567,      # ⚡ Instant
-    "authors_count": 143        # ⚡ Instant
+    "recipes_count": 567      # ⚡ Instant (from counter cache)
   }
 ]
 
@@ -1083,16 +992,18 @@ With counter caches, your API responses become much faster:
   {
     "id": 1,
     "name": "Chef John",
-    "recipes_count": 147,       # ⚡ Instant
-    "categories_count": 23      # ⚡ Instant
+    "recipes_count": 147      # ⚡ Instant (from counter cache)
   },
   {
     "id": 2,
     "name": "bluegirl",
-    "recipes_count": 89,        # ⚡ Instant
-    "categories_count": 12      # ⚡ Instant
+    "recipes_count": 89       # ⚡ Instant (from counter cache)
   }
 ]
+
+# Note: Only recipes_count is exposed in the API for UX purposes (showing counts in dropdowns).
+# The authors_count and categories_count fields exist in the database for potential future use
+# but are not currently included in API responses.
 ```
 
 ---
@@ -1313,14 +1224,17 @@ chef_john.categories
 # 3. Get author's recipes in a specific category
 chef_john.recipes.where(category: pizza)
 
-# 4. Popular categories (most recipes)
-Category.popular.limit(10)
+# 4. Popular categories (most recipes) - using counter_cache
+Category.order(recipes_count: :desc).limit(10)
 
-# 5. Prolific authors (most recipes) - uses counter_cache!
-Author.prolific.limit(10)  # Defined as: scope :prolific, -> { order(recipes_count: :desc) }
+# 5. Prolific authors (most recipes) - using counter_cache
+Author.order(recipes_count: :desc).limit(10)
 
-# 6. Highly rated authors (avg rating >= 4.5)
-Author.highly_rated
+# 6. Versatile authors (write in most categories) - using counter_cache
+Author.order(categories_count: :desc).limit(10)
+
+# 7. Collaborative categories (have most authors) - using counter_cache
+Category.order(authors_count: :desc).limit(10)
 ```
 
 ---
@@ -1364,44 +1278,51 @@ SQL
 
 ## Pagination Stability
 
-### Importance of ID Tie-Breakers
+### ID Tie-Breakers for Deterministic Ordering
 
 When implementing pagination, it's critical to ensure deterministic ordering by including a unique column (like `id`) as the final sort criterion. Without this, PostgreSQL may return rows in different orders across queries when sort values are identical.
 
-**Problem:**
+**Current Implementation:**
+
+All sorting scopes include ID tie-breakers for stable pagination:
+
 ```ruby
-# ❌ Incomplete sort specification
-scope :sorted_by_default, -> { order(ratings: :desc, created_at: :desc) }
+# ✅ Rating sorts (with ID tie-breaker)
+scope :sorted_by_rating_desc, -> { order(ratings: :desc, id: :desc) }
+scope :sorted_by_rating_asc, -> { order(ratings: :asc, id: :asc) }
+
+# ✅ Created date sorts (with ID tie-breaker)
+scope :sorted_by_created_desc, -> { order(created_at: :desc, id: :desc) }
+scope :sorted_by_created_asc, -> { order(created_at: :asc, id: :asc) }
+
+# ✅ Title sorts (with ID tie-breaker)
+scope :sorted_by_title_asc, -> { order(title: :asc, id: :asc) }
+scope :sorted_by_title_desc, -> { order(title: :desc, id: :desc) }
+
+# ✅ Author sorts (with ID tie-breaker)
+scope :sorted_by_author_asc, -> { left_joins(:author).order("authors.name ASC NULLS LAST, recipes.id ASC") }
+scope :sorted_by_author_desc, -> { left_joins(:author).order("authors.name DESC NULLS LAST, recipes.id DESC") }
+
+# ✅ Category sorts (with ID tie-breaker)
+scope :sorted_by_category_asc, -> { left_joins(:category).order("categories.name ASC NULLS LAST, recipes.id ASC") }
+scope :sorted_by_category_desc, -> { left_joins(:category).order("categories.name DESC NULLS LAST, recipes.id DESC") }
+
+# ✅ Default sort (with ID tie-breaker)
+scope :sorted_by_default, -> { order(ratings: :desc, created_at: :desc, id: :desc) }
 ```
-When multiple recipes have identical `ratings` and `created_at` values, PostgreSQL doesn't guarantee which order they'll appear. This causes:
+
+**Why ID tie-breakers matter:**
+
+When multiple recipes have identical sort values, PostgreSQL doesn't guarantee consistent ordering. This causes:
 - Inconsistent results when requesting the same page multiple times
 - Duplicate recipes appearing across different pages
 - Missing recipes from pagination results
 
-**Solution:**
-```ruby
-# ✅ Complete sort specification with ID tie-breaker
-scope :sorted_by_default, -> { order(ratings: :desc, created_at: :desc, id: :desc) }
-```
-Adding `id: :desc` as the final sort criterion ensures:
-- Deterministic ordering (same query always returns same order)
-- Stable pagination (page 3 always shows the same recipes)
-- No duplicates or missing recipes across pages
-
-**SQL Generated:**
-```sql
--- Without ID tie-breaker (unstable)
-ORDER BY ratings DESC, created_at DESC
-
--- With ID tie-breaker (stable)
-ORDER BY ratings DESC, created_at DESC, id DESC
-```
-
-**Best Practice:**
-Always include the primary key as the final sort column in any scope used for pagination, especially when:
-- Sorting by non-unique columns (ratings, timestamps, names)
-- Results will be paginated
-- Consistency across requests is important
+**Benefits of ID tie-breakers:**
+- ✅ Deterministic ordering (same query always returns same order)
+- ✅ Stable pagination (page 3 always shows the same recipes)
+- ✅ No duplicates or missing recipes across pages
+- ✅ Consistent behavior across all sorting options
 
 ---
 
@@ -1458,34 +1379,6 @@ Recipe.all.select { |r| r.ratings >= 4.5 }
 # Good: Filters in database
 Recipe.where("ratings >= 4.5")
 ```
-
----
-
-## Next Steps
-
-1. **Run migrations**:
-   ```bash
-   # Using docker exec
-   docker exec recipes-web-1 bundle exec rails db:migrate
-
-   # Or using docker compose (from project directory)
-   docker compose exec web bundle exec rails db:migrate
-   ```
-
-2. **Create seed data** or **import JSON**:
-   - See the separate rake task documentation for importing from JSON
-
-3. **Test the models**:
-   - Add RSpec tests
-   - Create factories with FactoryBot
-
-4. **Create API endpoints**:
-   - Add controllers under `app/controllers/api/v1/`
-   - Add routes in `config/routes.rb`
-
-5. **Monitor performance**:
-   - Use `EXPLAIN ANALYZE` to check query performance
-   - Add more indexes if needed based on actual usage patterns
 
 ---
 

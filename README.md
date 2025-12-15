@@ -342,7 +342,7 @@ Comprehensive documentation is available in the `/docs` directory:
   - Model definitions and usage examples
 
 - **[Testing Guide](docs/TESTING.md)** - Complete testing documentation
-  - How to run tests (308 passing tests)
+  - How to run tests (318 passing tests)
   - Test suite breakdown by category
   - Docker and local test execution
   - Shell aliases for faster testing
@@ -413,7 +413,7 @@ Comprehensive documentation is available in the `/docs` directory:
 │   ├── migrate/               # Database migrations
 │   ├── schema.rb              # Current database schema
 │   └── seeds.rb               # Seed data (uses RecipeImporter)
-├── spec/                      # RSpec test suite (308 tests)
+├── spec/                      # RSpec test suite (318 tests)
 │   ├── commands/              # Service object tests
 │   ├── controllers/concerns/  # Controller concern tests
 │   ├── models/                # Model tests
@@ -602,7 +602,7 @@ Author.order(recipes_count: :desc).limit(10)
 
 ## Testing
 
-The project has comprehensive test coverage with **308 passing tests**.
+The project has comprehensive test coverage with **318 passing tests**.
 
 ### Running Tests
 
@@ -638,7 +638,7 @@ bundle exec rspec spec/models/recipe_spec.rb:10
 
 ### Test Suite Breakdown
 
-**Total: 308 tests - ALL PASSING ✅**
+**Total: 318 tests - ALL PASSING ✅**
 
 - **API Endpoints**: 52 tests
   - Recipes API: 39 tests (CRUD, filtering, sorting, pagination consistency)
@@ -646,8 +646,8 @@ bundle exec rspec spec/models/recipe_spec.rb:10
   - Authors API: 6 tests (index, contextual filtering)
   - Health Check: 1 test
 
-- **Models**: 155 tests
-  - Recipe: 109 tests (validations, associations, scopes, callbacks, pagination stability)
+- **Models**: 163 tests
+  - Recipe: 117 tests (validations, associations, scopes, callbacks, pagination stability)
   - Category: 23 tests (validations, associations, counter caches)
   - Author: 23 tests (validations, associations, counter caches)
 
@@ -931,7 +931,7 @@ npm audit fix  # Fix vulnerabilities automatically
 ### GitHub Actions CI
 
 All pull requests and pushes to `main`, `develop`, or `master` automatically run:
-- ✅ **RSpec** - Full test suite (308 tests)
+- ✅ **RSpec** - Full test suite (318 tests)
 - ✅ **RuboCop** - Ruby code style
 - ✅ **ESLint** - JavaScript/TypeScript code style
 - ✅ **Brakeman** - Rails security vulnerabilities
@@ -1121,7 +1121,7 @@ Used AI when I got stuck on backend issues or needed inspiration:
 - PostgreSQL-specific features (tsvector, GIN indexes)
 
 **4. Test Coverage**
-AI helped me write comprehensive RSpec tests faster, covering models, controllers, serializers, and services. This saved a lot of time and ensured good test coverage (308 tests).
+AI helped me write comprehensive RSpec tests faster, covering models, controllers, serializers, and services. This saved a lot of time and ensured good test coverage (318 tests).
 
 **5. Documentation**
 AI helped me build this comprehensive documentation you're reading right now, including:
@@ -1132,7 +1132,7 @@ AI helped me build this comprehensive documentation you're reading right now, in
 
 ### How I Validated AI-Generated Code
 
-**Testing:** Ran the full RSpec suite (308 tests) and manually tested all features in the browser. Everything had to pass before I considered it done.
+**Testing:** Ran the full RSpec suite (318 tests) and manually tested all features in the browser. Everything had to pass before I considered it done.
 
 **Code Review:** Read through all generated code to understand what it does. Made adjustments when needed for clarity or to match my coding style.
 

@@ -22,14 +22,14 @@ class Recipe < ApplicationRecord
   # === Scopes for sorting ===
   scope :sorted_by_rating_desc, -> { order(ratings: :desc, id: :desc) }
   scope :sorted_by_rating_asc, -> { order(ratings: :asc, id: :asc) }
-  scope :sorted_by_created_desc, -> { order(created_at: :desc) }
-  scope :sorted_by_created_asc, -> { order(created_at: :asc) }
-  scope :sorted_by_title_asc, -> { order(title: :asc) }
-  scope :sorted_by_title_desc, -> { order(title: :desc) }
-  scope :sorted_by_author_asc, -> { left_joins(:author).order("authors.name ASC NULLS LAST") }
-  scope :sorted_by_author_desc, -> { left_joins(:author).order("authors.name DESC NULLS LAST") }
-  scope :sorted_by_category_asc, -> { left_joins(:category).order("categories.name ASC NULLS LAST") }
-  scope :sorted_by_category_desc, -> { left_joins(:category).order("categories.name DESC NULLS LAST") }
+  scope :sorted_by_created_desc, -> { order(created_at: :desc, id: :desc) }
+  scope :sorted_by_created_asc, -> { order(created_at: :asc, id: :asc) }
+  scope :sorted_by_title_asc, -> { order(title: :asc, id: :asc) }
+  scope :sorted_by_title_desc, -> { order(title: :desc, id: :desc) }
+  scope :sorted_by_author_asc, -> { left_joins(:author).order("authors.name ASC NULLS LAST, recipes.id ASC") }
+  scope :sorted_by_author_desc, -> { left_joins(:author).order("authors.name DESC NULLS LAST, recipes.id DESC") }
+  scope :sorted_by_category_asc, -> { left_joins(:category).order("categories.name ASC NULLS LAST, recipes.id ASC") }
+  scope :sorted_by_category_desc, -> { left_joins(:category).order("categories.name DESC NULLS LAST, recipes.id DESC") }
   scope :sorted_by_default, -> { order(ratings: :desc, created_at: :desc, id: :desc) }
 
   # Dynamic sorting scope
