@@ -547,7 +547,7 @@ RSpec.describe RecipeImporter, type: :command do
           command
 
           expect(Recipe.count).to eq(1)
-          expect(Recipe.first.ratings).to be_nil
+          expect(Recipe.first.ratings).to eq(0.0)
         end
       end
     end
