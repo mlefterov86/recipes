@@ -9,17 +9,12 @@ RSpec.describe Recipe, type: :model do
   describe 'validations' do
     it { is_expected.to validate_presence_of(:title) }
     it { is_expected.to validate_presence_of(:ingredients) }
-    it { is_expected.to validate_numericality_of(:ratings).is_greater_than_or_equal_to(0).is_less_than_or_equal_to(5).allow_nil }
+    it { is_expected.to validate_numericality_of(:ratings).is_greater_than_or_equal_to(0).is_less_than_or_equal_to(5) }
     it { is_expected.to validate_numericality_of(:cook_time).is_greater_than_or_equal_to(0) }
     it { is_expected.to validate_numericality_of(:prep_time).is_greater_than_or_equal_to(0) }
 
     context 'validations edge cases' do
       describe 'ratings' do
-        it 'accepts nil ratings' do
-          recipe = build(:recipe, ratings: nil)
-          expect(recipe).to be_valid
-        end
-
         it 'accepts ratings at minimum boundary (0)' do
           recipe = build(:recipe, ratings: 0)
           expect(recipe).to be_valid
@@ -103,8 +98,8 @@ RSpec.describe Recipe, type: :model do
     it { is_expected.to have_db_column(:ingredients).of_type(:jsonb).with_options(null: false) }
     it { is_expected.to have_db_column(:ratings).of_type(:decimal) }
     it { is_expected.to have_db_column(:cuisine).of_type(:string) }
-    it { is_expected.to have_db_column(:category_id).of_type(:integer) }
-    it { is_expected.to have_db_column(:author_id).of_type(:integer) }
+    it { is_expected.to have_db_column(:category_id).of_type(:uuid) }
+    it { is_expected.to have_db_column(:author_id).of_type(:uuid) }
     it { is_expected.to have_db_column(:image_url).of_type(:string) }
     it { is_expected.to have_db_column(:searchable).of_type(:tsvector) }
     it { is_expected.to have_db_column(:created_at).of_type(:datetime).with_options(null: false) }

@@ -4,7 +4,7 @@ class Recipe < ApplicationRecord
 
   validates :title, presence: true
   validates :ingredients, presence: true
-  validates :ratings, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 5, allow_nil: true }
+  validates :ratings, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 5 }
   validates :cook_time, numericality: { greater_than_or_equal_to: 0 }
   validates :prep_time, numericality: { greater_than_or_equal_to: 0 }
 

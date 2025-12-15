@@ -7,10 +7,7 @@ RSpec.describe Category, type: :model do
   end
 
   describe 'validations' do
-    subject { build(:category) }
-
     it { is_expected.to validate_presence_of(:name) }
-    it { is_expected.to validate_uniqueness_of(:name) }
 
     context 'with name normalization' do
       it 'enforces uniqueness regardless of case due to normalization' do

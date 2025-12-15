@@ -134,10 +134,10 @@ class RecipeImporter
   end
 
   def parse_rating(rating_value)
-    return nil if rating_value.blank?
+    return 0.0 if rating_value.blank?
 
     rating = rating_value.to_f
-    rating.between?(0, 5) ? rating.round(2) : nil
+    rating.between?(0, 5) ? rating.round(2) : 0.0
   end
 
   def extract_actual_image_url(image_url)
