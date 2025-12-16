@@ -1,3 +1,4 @@
+import { useTheme } from '../contexts/ThemeContext'
 import type { PaginationMeta } from '../types'
 
 interface PaginationProps {
@@ -6,6 +7,8 @@ interface PaginationProps {
 }
 
 function Pagination({ pagination, onPageChange }: PaginationProps) {
+  const { theme } = useTheme()
+  const isDOS = theme === 'dos-terminal'
   const { current_page, total_pages, has_prev, has_next } = pagination
 
   // Generate page numbers to display
@@ -60,12 +63,16 @@ function Pagination({ pagination, onPageChange }: PaginationProps) {
         onClick={() => onPageChange(current_page - 1)}
         disabled={!has_prev}
         className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-          has_prev
-            ? 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-300'
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+          isDOS
+            ? has_prev
+              ? 'bg-dos-black text-dos-green border-2 border-dos-green hover:bg-dos-green hover:text-dos-black font-mono'
+              : 'bg-dos-black text-dos-green-dark border border-dos-green-dark cursor-not-allowed font-mono'
+            : has_prev
+              ? 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-300'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
         }`}
       >
-        Previous
+        {isDOS ? '[<]' : 'Previous'}
       </button>
 
       {/* Page numbers */}
@@ -75,7 +82,7 @@ function Pagination({ pagination, onPageChange }: PaginationProps) {
             return (
               <span
                 key={`ellipsis-${index}`}
-                className="px-3 py-2 text-gray-500"
+                className={`px-3 py-2 ${isDOS ? 'text-dos-green-dim font-mono' : 'text-gray-500'}`}
               >
                 ...
               </span>
@@ -90,9 +97,13 @@ function Pagination({ pagination, onPageChange }: PaginationProps) {
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                isActive
-                  ? 'bg-red-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-300'
+                isDOS
+                  ? isActive
+                    ? 'bg-dos-green text-dos-black border-2 border-dos-green font-mono'
+                    : 'bg-dos-black text-dos-green border-2 border-dos-green hover:bg-dos-green hover:text-dos-black font-mono'
+                  : isActive
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-300'
               }`}
             >
               {pageNum}
@@ -106,12 +117,16 @@ function Pagination({ pagination, onPageChange }: PaginationProps) {
         onClick={() => onPageChange(current_page + 1)}
         disabled={!has_next}
         className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-          has_next
-            ? 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-300'
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+          isDOS
+            ? has_next
+              ? 'bg-dos-black text-dos-green border-2 border-dos-green hover:bg-dos-green hover:text-dos-black font-mono'
+              : 'bg-dos-black text-dos-green-dark border border-dos-green-dark cursor-not-allowed font-mono'
+            : has_next
+              ? 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border border-gray-300'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
         }`}
       >
-        Next
+        {isDOS ? '[>]' : 'Next'}
       </button>
     </div>
   )

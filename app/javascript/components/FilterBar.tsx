@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTheme } from '../contexts/ThemeContext'
 import type { Category, Author, FilterParams, SortOption } from '../types'
 import TagInput from './TagInput'
 import SearchableSelect from './SearchableSelect'
@@ -9,6 +10,8 @@ interface FilterBarProps {
 }
 
 function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
+  const { theme } = useTheme()
+  const isDOS = theme === 'dos-terminal'
   const [categories, setCategories] = useState<Category[]>([])
   const [authors, setAuthors] = useState<Author[]>([])
   const [loading, setLoading] = useState(true)
@@ -84,22 +87,38 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
 
   if (isInitialLoad) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <p className="text-gray-500">Loading filters...</p>
+      <div className={`rounded-lg p-6 mb-8 ${
+        isDOS
+          ? 'bg-dos-black border-2 border-dos-green'
+          : 'bg-white shadow'
+      }`}>
+        <p className={isDOS ? 'text-dos-green font-mono' : 'text-gray-500'}>
+          {isDOS ? 'LOADING FILTERS.DAT...' : 'Loading filters...'}
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-8">
+    <div className={`rounded-lg p-6 mb-8 ${
+      isDOS
+        ? 'bg-dos-black border-2 border-dos-green'
+        : 'bg-white shadow'
+    }`}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+        <h2 className={`text-lg font-semibold ${isDOS ? 'text-dos-green font-mono' : 'text-gray-900'}`}>
+          {isDOS ? '> FILTERS.EXE' : 'Filters'}
+        </h2>
         {hasActiveFilters && (
           <button
             onClick={handleClearFilters}
-            className="text-sm text-red-600 hover:text-red-700 font-medium"
+            className={`text-sm font-medium transition-colors ${
+              isDOS
+                ? 'text-dos-green hover:text-dos-green-dim font-mono'
+                : 'text-red-600 hover:text-red-700'
+            }`}
           >
-            Clear all filters
+            {isDOS ? '[X] CLEAR ALL' : 'Clear all filters'}
           </button>
         )}
       </div>
@@ -107,8 +126,8 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Category Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category
+          <label className={`block text-sm font-medium mb-1 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-700'}`}>
+            {isDOS ? 'CATEGORY:' : 'Category'}
           </label>
           <SearchableSelect
             value={filters.category_id}
@@ -125,8 +144,8 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
 
         {/* Author Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Author
+          <label className={`block text-sm font-medium mb-1 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-700'}`}>
+            {isDOS ? 'AUTHOR:' : 'Author'}
           </label>
           <SearchableSelect
             value={filters.author_id}
@@ -143,8 +162,8 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
 
         {/* Title Search */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Recipe Title
+          <label htmlFor="title" className={`block text-sm font-medium mb-1 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-700'}`}>
+            {isDOS ? 'RECIPE TITLE:' : 'Recipe Title'}
           </label>
           <TagInput
             value={filters.title || ''}
@@ -160,8 +179,8 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
 
         {/* Ingredient Search */}
         <div>
-          <label htmlFor="ingredient" className="block text-sm font-medium text-gray-700 mb-1">
-            Ingredient
+          <label htmlFor="ingredient" className={`block text-sm font-medium mb-1 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-700'}`}>
+            {isDOS ? 'INGREDIENT:' : 'Ingredient'}
           </label>
           <TagInput
             value={filters.ingredient || ''}
@@ -177,8 +196,8 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
 
         {/* Sort Dropdown */}
         <div>
-          <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-1">
-            Sort By
+          <label htmlFor="sort" className={`block text-sm font-medium mb-1 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-700'}`}>
+            {isDOS ? 'SORT BY:' : 'Sort By'}
           </label>
           <select
             id="sort"
@@ -187,7 +206,11 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
               sort_by: (e.target.value as SortOption) || undefined,
               page: 1
             })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            className={`w-full px-3 py-2 rounded-lg transition-colors ${
+              isDOS
+                ? 'bg-dos-black border-2 border-dos-green text-dos-green font-mono focus:ring-2 focus:ring-dos-green focus:border-dos-green'
+                : 'border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+            }`}
           >
             <option value="">Default (Rating & Date)</option>
             <option value="rating_desc">Rating (High to Low)</option>
@@ -206,8 +229,8 @@ function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
 
       {/* General Search - Full Width */}
       <div className="mt-4">
-        <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-1">
-          Search All Fields
+        <label htmlFor="query" className={`block text-sm font-medium mb-1 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-700'}`}>
+          {isDOS ? 'SEARCH ALL FIELDS:' : 'Search All Fields'}
         </label>
         <TagInput
           value={filters.query || ''}

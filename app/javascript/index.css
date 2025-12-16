@@ -1,1 +1,104 @@
 @import "tailwindcss";
+
+/* ============================================
+   DOS Terminal CRT Effects
+   ============================================ */
+
+body.dos-terminal {
+  background: #000;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  overflow-x: hidden;
+}
+
+/* CRT Scanlines Effect */
+body.dos-terminal::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+
+  /* Scanlines effect */
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 255, 0, 0.03) 50%
+  );
+  background-size: 100% 4px;
+  animation: scanline 8s linear infinite;
+}
+
+/* CRT Curvature & Vignette */
+body.dos-terminal::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9998;
+
+  /* Vignette effect */
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.3) 70%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+
+  /* CRT glow */
+  box-shadow: inset 0 0 100px rgba(0, 255, 0, 0.1);
+}
+
+/* Phosphor glow on text */
+body.dos-terminal * {
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+}
+
+/* Flicker effect */
+body.dos-terminal #root {
+  animation: flicker 0.15s infinite;
+}
+
+/* Disable smooth scrolling in DOS mode for authenticity */
+body.dos-terminal {
+  scroll-behavior: auto;
+}
+
+/* CRT border/bezel effect */
+body.dos-terminal #root {
+  padding: 2rem;
+  box-shadow:
+    inset 0 0 50px rgba(0, 255, 0, 0.1),
+    0 0 50px rgba(0, 255, 0, 0.2);
+}
+
+/* Blinking cursor for inputs */
+body.dos-terminal input:focus {
+  caret-color: #00ff00;
+}
+
+body.dos-terminal textarea:focus {
+  caret-color: #00ff00;
+}
+
+/* Keyframe animations defined in Tailwind config */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.96; }
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}

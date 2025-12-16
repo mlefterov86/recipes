@@ -1,11 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useTheme } from '../contexts/ThemeContext'
 import RecipeCard from './RecipeCard'
+import { RecipeListItem } from './RecipeListItem'
 import FilterBar from './FilterBar'
 import Pagination from './Pagination'
+import { ViewModeToggle } from './ViewModeToggle'
 import type { Recipe, FilterParams, PaginationMeta, RecipesResponse } from '../types'
 
 function RecipeList() {
+  const { theme, viewMode } = useTheme()
+  const isDOS = theme === 'dos-terminal'
+  const isListView = viewMode === 'list'
   const [searchParams, setSearchParams] = useSearchParams()
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [pagination, setPagination] = useState<PaginationMeta | null>(null)
@@ -101,9 +107,12 @@ function RecipeList() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">
-        Discover Delicious Recipes
-      </h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className={`text-4xl font-bold ${isDOS ? 'text-dos-green font-mono' : 'text-gray-900'}`}>
+          {isDOS ? '> DIR /RECIPES' : 'Discover Delicious Recipes'}
+        </h1>
+        <ViewModeToggle />
+      </div>
 
       {/* Filters */}
       <FilterBar filters={filters} onFiltersChange={updateFilters} />
@@ -111,15 +120,17 @@ function RecipeList() {
       {/* Loading state */}
       {loading && (
         <div className="text-center py-12">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-red-600 border-r-transparent"></div>
-          <p className="mt-4 text-gray-600">Loading recipes...</p>
+          <div className={`inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid ${isDOS ? 'border-dos-green border-r-transparent' : 'border-red-600 border-r-transparent'}`}></div>
+          <p className={`mt-4 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-600'}`}>
+            {isDOS ? 'LOADING RECIPES.DAT...' : 'Loading recipes...'}
+          </p>
         </div>
       )}
 
       {/* Error state */}
       {error && !loading && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <p className="font-medium">Error loading recipes</p>
+        <div className={`rounded-lg p-4 ${isDOS ? 'bg-dos-black border-2 border-dos-green text-dos-green font-mono' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+          <p className="font-medium">{isDOS ? 'ERROR:' : 'Error loading recipes'}</p>
           <p className="text-sm mt-1">{error}</p>
         </div>
       )}
@@ -127,12 +138,16 @@ function RecipeList() {
       {/* Empty state */}
       {!loading && !error && recipes.length === 0 && (
         <div className="text-center py-12">
-          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M12 12h.01M12 12h.01M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No recipes found</h3>
-          <p className="text-gray-600 mb-4">
-            Try adjusting your filters or search criteria
+          {!isDOS && (
+            <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M12 12h.01M12 12h.01M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+          <h3 className={`text-lg font-medium mb-2 ${isDOS ? 'text-dos-green font-mono' : 'text-gray-900'}`}>
+            {isDOS ? 'FILE NOT FOUND' : 'No recipes found'}
+          </h3>
+          <p className={`mb-4 ${isDOS ? 'text-dos-green-dim font-mono' : 'text-gray-600'}`}>
+            {isDOS ? 'TRY ADJUSTING YOUR SEARCH PARAMETERS' : 'Try adjusting your filters or search criteria'}
           </p>
           <button
             onClick={() => updateFilters({
@@ -144,30 +159,40 @@ function RecipeList() {
               sort_by: undefined,
               page: 1
             })}
-            className="inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className={`inline-block px-4 py-2 rounded-lg transition-colors ${isDOS ? 'bg-dos-black border-2 border-dos-green text-dos-green hover:bg-dos-green hover:text-dos-black' : 'bg-red-600 text-white hover:bg-red-700'}`}
           >
-            Clear all filters
+            {isDOS ? 'CLEAR FILTERS' : 'Clear all filters'}
           </button>
         </div>
       )}
 
-      {/* Recipe Grid */}
+      {/* Recipe Grid/List */}
       {!loading && !error && recipes.length > 0 && (
         <>
           {pagination && (
-            <div className="mb-4 text-sm text-gray-600">
-              Showing {recipes.length} of {pagination.total_count} recipes
+            <div className={`mb-4 text-sm ${isDOS ? 'text-dos-green font-mono' : 'text-gray-600'}`}>
+              {isDOS ? `[${recipes.length} OF ${pagination.total_count} FILES]` : `Showing ${recipes.length} of ${pagination.total_count} recipes`}
               {pagination.current_page > 1 && (
-                <span> (page {pagination.current_page} of {pagination.total_pages})</span>
+                <span> {isDOS ? `[PAGE ${pagination.current_page}/${pagination.total_pages}]` : `(page ${pagination.current_page} of ${pagination.total_pages})`}</span>
               )}
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))}
-          </div>
+          {isListView ? (
+            /* List View */
+            <div className="flex flex-col space-y-0">
+              {recipes.map((recipe, index) => (
+                <RecipeListItem key={recipe.id} recipe={recipe} index={index} />
+              ))}
+            </div>
+          ) : (
+            /* Card Grid View */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {recipes.map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
           {pagination && pagination.total_pages > 1 && (
